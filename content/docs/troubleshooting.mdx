@@ -1,0 +1,55 @@
+---
+title: Troubleshooting & FAQ
+description: Common issues and solutions when self-hosting ToggleMesh.
+---
+
+# Troubleshooting & FAQ
+
+Self-hosting enterprise software can sometimes lead to unexpected infrastructure challenges. Below is a list of common issues and their solutions when deploying the ToggleMesh Control Plane.
+
+## Reverse Proxy & SSE Disconnects
+
+**Symptom**: The Admin UI or SDKs repeatedly disconnect and reconnect to the SSE stream every 30-60 seconds.
+
+**Cause**: By default, many reverse proxies (like Nginx, HAProxy, or AWS ALB) are configured to aggressively terminate idle HTTP connections to prevent Slowloris attacks. SSE connections are long-lived and often idle.
+
+**Solution (Nginx)**: 
+Configure your Nginx location block to explicitly support long-lived SSE connections by disabling buffering and increasing the timeout:
+
+```nginx
+location /api/client/stream {
+    proxy_pass http://togglemesh-api;
+    proxy_http_version 1.1;
+    proxy_set_header Connection '';
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 86400s;
+    proxy_send_timeout 86400s;
+}
+```
+
+## Analytics Events Not Appearing (Enterprise Stack)
+
+**Symptom**: You've deployed the Enterprise Stack, but analytics events are not appearing in the dashboard.
+
+**Cause**: The API might not be able to connect to Kafka, or the `KafkaAnalyticsConsumerWorker` might be failing to process the `togglemesh-events` topic.
+
+**Solution**:
+1. Check the logs of the `ToggleMesh.API` container for Kafka connection errors (`Error consuming from Kafka`).
+2. Verify that the environment variable `Analytics__Kafka__BootstrapServers` is correctly pointing to your Kafka broker (e.g., `kafka:9092`).
+3. Ensure ClickHouse is accessible and that the `Analytics__ClickHouse__ConnectionString` is correctly configured, as the worker pulls from Kafka and sinks directly into ClickHouse.
+
+## Database Partitioning Failures
+
+**Symptom**: The API logs show `Error occurred during partitioning and cleanup`.
+
+**Cause**: The PostgreSQL user configured for the API might not have the necessary privileges to execute `CREATE TABLE` statements for the monthly `AuditLogs` partitions.
+
+**Solution**:
+Ensure the database user has sufficient DDL privileges. ToggleMesh automatically attempts to create partitions one month in advance via the `PartitioningWorker`. If it fails, manual intervention via `psql` might be required to create the partition.
+
+## Can I use ToggleMesh without Redis?
+
+No. Redis is a hard requirement for the ToggleMesh Control Plane. It is heavily utilized for two critical functions:
+1. **Pub/Sub**: Broadcasting flag updates across API nodes to trigger SSE pushes.
+2. **Distributed Caching**: Caching API keys and environment metadata to ensure the Control Plane API responds in `<10ms` even under heavy load.

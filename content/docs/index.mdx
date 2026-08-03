@@ -1,29 +1,46 @@
 ---
 title: ToggleMesh Documentation
-description: Enterprise Feature Flag & Contextual Experimentation Engine
+description: The ultimate B2B Enterprise Feature Flag & Experimentation Engine
 ---
 
-# Welcome to ToggleMesh Documentation
+# Welcome to ToggleMesh
 
-**ToggleMesh** is a self-hosted feature management and experimentation platform designed for teams requiring strict data privacy, enterprise-grade RBAC, and sub-30ns evaluation latency.
+**ToggleMesh** is an open-source, enterprise-grade feature management and experimentation platform. It is engineered for teams requiring strict data privacy (100% VPC), zero-allocation evaluation paths, and high-throughput real-time streaming.
+
+Whether you are migrating from LaunchDarkly/Statsig or building a new product from scratch, ToggleMesh provides a comprehensive suite of tools to ship features safely and run Bayesian A/B tests with confidence.
+
+{/* TODO: Image - High-level dashboard screenshot showing active flags, environments, and real-time analytics */}
 
 ---
 
-## ⚡ Key Highlights
+## ⚡ Why ToggleMesh?
 
-- **Full Self-Hosting**: 100% control over your data plane and control plane.
-- **Zero-Allocation Engine**: Microsecond-fast local memory evaluations without Garbage Collection pressure.
-- **Real-Time Push**: Instant flag updates pushed over Server-Sent Events (SSE).
-- **Multi-Language SDKs**: Native support for .NET (C#), Node.js, JS/React, Python, Go, Unreal Engine, and CLI.
-- **Contextual Experiments**: Built-in Multi-Armed Bandit (MAB) auto-traffic allocation.
+<div className="grid sm:grid-cols-2 gap-4 mt-6">
+  <div className="p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50">
+    <h3 className="font-semibold text-lg mb-2">Zero-Alloc Engine</h3>
+    <p className="text-zinc-600 dark:text-zinc-400 text-sm">Our .NET SDK leverages <code>ref struct</code> and Expression Trees for local memory evaluation with &lt;30ns latency and exactly 0 bytes allocated per check.</p>
+  </div>
+  <div className="p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50">
+    <h3 className="font-semibold text-lg mb-2">Privacy First (100% VPC)</h3>
+    <p className="text-zinc-600 dark:text-zinc-400 text-sm">Full self-hosting ensures that PII never leaves your network. We offer GDPR erasure APIs, identity pseudonymization, and immutable audit logs by default.</p>
+  </div>
+  <div className="p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50">
+    <h3 className="font-semibold text-lg mb-2">Built-in MAB & Analytics</h3>
+    <p className="text-zinc-600 dark:text-zinc-400 text-sm">Automate traffic routing using built-in Bayesian Multi-Armed Bandits (Monte Carlo simulations) powered by a high-throughput Kafka + ClickHouse enterprise stack.</p>
+  </div>
+  <div className="p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50">
+    <h3 className="font-semibold text-lg mb-2">Real-Time SSE Sync</h3>
+    <p className="text-zinc-600 dark:text-zinc-400 text-sm">Forget HTTP polling. ToggleMesh pushes flag updates instantly via Server-Sent Events (SSE) fanned out through Redis Pub/Sub.</p>
+  </div>
+</div>
 
 ---
 
 ## 📚 Explore the Docs
 
 <Cards>
-  <Card title="Quickstart Guide" href="/docs/quickstart" description="Get up and running with ToggleMesh in under 5 minutes." />
-  <Card title="Architecture" href="/docs/architecture" description="Understand the Control Plane, Data Plane, and Real-Time SSE sync." />
-  <Card title="SDK Reference" href="/docs/sdks" description="Explore client and server SDKs for C#, Node.js, Python, Go, and React." />
-  <Card title="Self-Hosting" href="/docs/self-hosting" description="Deploy ToggleMesh on Docker, Kubernetes, or Bare Metal." />
+  <Card title="Quickstart Guide" href="/docs/quickstart" description="Launch the ToggleMesh server via Docker Compose and evaluate your first multi-language flags." />
+  <Card title="Core Concepts" href="/docs/core-concepts" description="Learn about Projects, Environments, Flags, Targeting Rules, and Context." />
+  <Card title="Architecture Deep Dives" href="/docs/architecture" description="Understand the Control Plane, Data Plane, and Custom Targeting Operators." />
+  <Card title="Migrating to ToggleMesh" href="/docs/migration" description="Step-by-step guides for migrating from LaunchDarkly and Statsig." />
 </Cards>

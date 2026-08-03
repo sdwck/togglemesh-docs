@@ -1,0 +1,57 @@
+---
+title: Integrations & Webhooks
+description: Connect ToggleMesh to Slack, Discord, and internal tools.
+---
+
+# Integrations & Webhooks
+
+Keeping your team aligned on feature flag changes is critical for incident response and release coordination. ToggleMesh provides native integrations and generic webhooks to broadcast Audit Events in real-time.
+
+## Supported Integrations
+
+ToggleMesh currently supports predefined payload formatters for:
+- **Slack**: Sends rich, color-coded blocks to a Slack Incoming Webhook URL.
+- **Discord**: Sends embedded cards to a Discord Webhook URL.
+- **Generic Webhook**: Sends a raw HTTP POST payload containing the JSON Audit Event.
+
+{/* TODO: Image - Screenshot showing a Slack message triggered by ToggleMesh, highlighting a flag state change */}
+
+## Configuring an Integration
+
+You configure Integrations at the Project level, meaning a single integration will listen to events across all Environments within that Project.
+
+1. Navigate to Project Settings -> **Integrations**.
+2. Click **Add Integration**.
+3. Select the Provider (Slack, Discord, or Generic).
+4. Paste your Webhook URL.
+5. Save.
+
+ToggleMesh will immediately send a test ping to verify connectivity.
+
+## Generic Webhook Payload
+
+If you are building a custom internal tool (e.g., syncing ToggleMesh Audit Logs to an internal compliance system), use the Generic Webhook provider.
+
+ToggleMesh will send a `POST` request with the following JSON schema:
+
+```json
+{
+  "eventId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "timestamp": "2026-08-01T14:32:00Z",
+  "action": "UpdateFlagSettings",
+  "projectId": "123e4567-e89b-12d3-a456-426614174000",
+  "environmentId": "123e4567-e89b-12d3-a456-426614174001",
+  "actor": "alice@acme.com",
+  "targetId": "new_checkout_flow",
+  "diff": [
+    {
+      "op": "replace",
+      "path": "/FallthroughRollout/0/VariationId",
+      "value": "b59a68-..."
+    }
+  ]
+}
+```
+
+> [!IMPORTANT]
+> ToggleMesh dispatches webhooks asynchronously via a background worker (`WebhookDispatcherService`). This ensures that if Slack or your internal tool is down, it does not delay or crash the Control Plane API.

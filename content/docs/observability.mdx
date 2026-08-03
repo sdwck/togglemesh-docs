@@ -1,0 +1,43 @@
+---
+title: Observability
+description: Monitoring ToggleMesh using OpenTelemetry and Audit Logs.
+---
+
+# Observability
+
+Operating a feature flag platform in an enterprise environment requires deep visibility into what the platform is doing. ToggleMesh provides observability through two main pillars: **OpenTelemetry** and **Audit Logs**.
+
+## OpenTelemetry (OTel)
+
+ToggleMesh is fully instrumented with OpenTelemetry. It exposes both Metrics and Traces, allowing you to monitor the health of the Control Plane and export data to Prometheus, Grafana, Datadog, or any other OTel-compatible backend.
+
+### Key Metrics
+
+ToggleMesh exposes several critical performance metrics. Crucially, all multi-tenant metrics are automatically tagged with the `environment_id`, allowing you to bill or monitor your internal teams accurately.
+
+- `togglemesh.flags.evaluations`: Counter of how many times flags were evaluated (Data Plane).
+- `togglemesh.flags.updates`: Counter of how many times flags were changed (Control Plane).
+- `togglemesh.sse.connections.active`: Gauge of active Server-Sent Event connections.
+- `togglemesh.analytics.ingested`: Counter of raw analytics events ingested before being flushed to PostgreSQL/ClickHouse.
+- `togglemesh.cache.requests`: Counter of cache hits/misses for API keys and Environment metadata.
+
+> [!TIP]
+> If you are running the Enterprise Stack, you can use these OpenTelemetry metrics to set up auto-scaling rules for the API based on active SSE connections or analytics ingestion rates.
+
+## Audit Logs
+
+Every mutation in the ToggleMesh Admin UI (creating a flag, updating targeting rules, deleting an environment) generates an immutable **Audit Log**.
+
+These logs are:
+1. Stored in PostgreSQL.
+2. Viewable directly in the Admin UI under the `/audit` route.
+3. Automatically pruned by the `PartitioningWorker` based on your `AuditLogs__RetentionDays` configuration.
+
+An Audit Log contains:
+- **Actor**: Who made the change (Email or API Key ID).
+- **Action**: What was done (e.g., `UpdateFlagSettings`).
+- **Target**: The ID of the affected resource.
+- **Timestamp**: Exactly when the change occurred.
+- **Diff**: The JSON diff showing the previous state and the new state.
+
+{/* TODO: Image - Screenshot of the Audit Log UI showing a detailed JSON diff of a flag rule change */}

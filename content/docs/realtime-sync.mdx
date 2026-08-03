@@ -1,0 +1,39 @@
+---
+title: Real-Time Sync (SSE)
+description: How ToggleMesh achieves sub-50ms global flag updates using Redis Pub/Sub and Server-Sent Events.
+---
+
+# Real-Time Sync
+
+A core philosophical tenet of ToggleMesh is that **HTTP polling is a bad pattern for feature flags**. 
+Polling wastes client battery, saturates your ingress controllers with useless 304 Not Modified requests, and inherently introduces latency between when you click "Save" in the Admin UI and when your users actually see the feature.
+
+ToggleMesh solves this entirely by utilizing **Server-Sent Events (SSE)**.
+
+## The Architecture
+
+When you update a flag in the ToggleMesh Admin UI, the following flow occurs:
+
+1. **Database Commit**: The ToggleMesh API commits the change to PostgreSQL.
+2. **Redis Publish**: The API immediately publishes an invalidation event to the global Redis topic `togglemesh-sse-updates`. The payload wraps the event name and the specific `EnvironmentId`.
+3. **API Fan-Out**: Every running ToggleMesh API node is subscribed to this Redis topic. When a node receives the event, it looks at its pool of active SSE connections and pushes the updated flag state down the pipe **only to the clients connected to that specific EnvironmentId**.
+4. **Local Cache Update**: The SDK receives the SSE payload, atomically updates its local in-memory dictionary, and immediately applies the new rule for the very next `IsEnabled()` call.
+
+{/* TODO: Image - Architecture diagram showing PostgreSQL -> Redis Pub/Sub -> API Nodes -> SSE Streams -> SDKs */}
+
+## Why SSE and not WebSockets?
+
+ToggleMesh deliberately chose Server-Sent Events over WebSockets for the Data Plane:
+
+- **Unidirectional**: Feature flag sync is strictly a Server -> Client operation. We do not need the bidirectional overhead of WebSockets.
+- **Firewall Friendly**: SSE operates over standard HTTP/HTTPS (port 443). It rarely gets blocked by restrictive enterprise firewalls, unlike WebSocket protocols (WSS).
+- **Native Reconnection**: Browsers and HTTP clients have native, built-in support for reconnecting dropped SSE streams, making the SDK implementation robust and lightweight.
+
+## Scaling SSE
+
+Because the API uses Redis Pub/Sub as the message bus, you can horizontally scale the ToggleMesh API infinitely.
+
+If you have 10,000 active server connections, you can deploy 10 replicas of the ToggleMesh API behind a standard load balancer. Redis ensures that an update made on Node 1 is instantly broadcasted to Nodes 2-10, so all 10,000 connections receive the update simultaneously.
+
+> [!TIP]
+> Ensure your Reverse Proxy (e.g., Nginx, Traefik, HAProxy) is configured to allow long-lived HTTP connections without timing them out. See our [Troubleshooting Guide](/docs/troubleshooting) for specific Nginx configuration snippets.

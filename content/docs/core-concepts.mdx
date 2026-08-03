@@ -1,0 +1,61 @@
+---
+title: Core Concepts
+description: The fundamental building blocks of ToggleMesh
+---
+
+# Core Concepts
+
+ToggleMesh is built around a few fundamental primitives. Understanding these will help you organize your feature flags and run experiments effectively.
+
+## Projects & Environments
+
+### Projects
+A **Project** is a logical grouping of flags, segments, and experiments. Typically, a Project represents a single application, service, or a tightly coupled suite of microservices.
+
+### Environments
+Every Project contains multiple **Environments** (e.g., `Development`, `Staging`, `Production`). 
+- **Isolation**: Each Environment has its own API keys, its own flag state, and its own target rules.
+- **Data Boundaries**: Evaluated metrics and analytics are strictly isolated by Environment to prevent testing data from contaminating production metrics.
+
+{/* TODO: Image - Diagram illustrating the hierarchy: Project -> Environments -> Flags */}
+
+## Flags & Variations
+
+A **Feature Flag** in ToggleMesh isn't just a boolean. While simple ON/OFF flags are supported, ToggleMesh natively supports **Multivariate Flags**.
+
+### Variations
+Every flag must have at least two **Variations**. A Variation can return:
+- **Boolean**: `true` or `false`
+- **String**: Hex codes, UI copy, bucket names (e.g., `"#FF5733"`)
+- **JSON**: Complex configurations or nested UI state (e.g., `{"theme": "dark", "layout": "grid"}`)
+
+> [!NOTE]
+> **Immutability & Extensibility**: For `String` and `JSON` flags, the values of specific variations are typically immutable once deployed to prevent unintended runtime crashes on clients expecting a specific schema. If you need to change a value, it's a best practice to create a *new* Variation or extend the existing JSON schema rather than modifying an active payload.
+
+## Targeting Rules & Segments
+
+### Target Rules
+A **Target Rule** is an IF/THEN statement evaluated by the SDK. It consists of:
+- **Attribute**: The property to check (e.g., `email`, `country`, `version`).
+- **Operator**: The condition (e.g., `EndsWith`, `SemVerGreaterThan`, `InList`).
+- **Value**: The value to compare against.
+
+*Example*: `IF (email EndsWith "@google.com") THEN serve Variation A.`
+
+{/* TODO: Image - Screenshot of the rule builder UI in the Admin Dashboard showing a complex targeting rule */}
+
+### Segments
+A **Segment** is a reusable list of Target Rules. If you find yourself repeatedly targeting "Beta Users" across 15 different flags, you can define a Segment called `Beta Users` and simply target that Segment in your flags.
+
+## Context & The ToggleMeshUser
+
+When evaluating a flag, the SDK needs to know *who* is asking for it. This is passed via the **Context** (often mapped to a `ToggleMeshUser` object depending on the SDK).
+
+The Context requires a unique identifier (like a User ID or Session ID). Without this identifier, percentage rollouts and A/B tests cannot maintain stickiness.
+
+### Identity Pseudonymization
+To ensure 100% GDPR compliance, the ToggleMesh Server SDKs **hash all identifiers locally** before sending analytics events back to the Control Plane. Your users' raw emails or database IDs never touch the wire unless you explicitly map them to custom properties.
+
+---
+
+Next, read our [Architecture Deep Dive](/docs/architecture) to understand how the Control Plane pushes these rules to the SDKs in real-time.

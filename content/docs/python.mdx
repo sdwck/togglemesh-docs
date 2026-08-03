@@ -1,0 +1,64 @@
+---
+title: Python SDK
+description: ToggleMesh Server SDK for Python applications.
+---
+
+# Python SDK
+
+The ToggleMesh Python SDK is designed for Django, FastAPI, Flask, or simple background worker scripts. It evaluates rules locally and handles background syncing automatically.
+
+## Installation
+
+```bash
+pip install togglemesh
+```
+
+## Initialization
+
+Initialize the client with your Server Key. The client will block briefly to fetch the initial state, then spawn a daemon thread to listen for SSE updates.
+
+```python
+from togglemesh import ToggleMeshClient
+
+client = ToggleMeshClient(
+    server_key="tm_srv_...",
+    base_url="http://localhost:5264"
+)
+```
+
+## Evaluating Flags
+
+```python
+# Boolean
+is_new_algo = client.is_enabled("new-search-algo", default_value=False, identity="user_123")
+
+# String
+button_color = client.get_variation("checkout-btn-color", default_value="blue", identity="user_123")
+
+# JSON
+config = client.get_json("advanced-config", default_value={"retries": 3}, identity="user_123")
+```
+
+### Context & Targeting
+
+Pass targeting attributes via the `context` dictionary or directly as kwargs:
+
+```python
+is_enabled = client.is_enabled(
+    "beta-feature",
+    identity="user_123",
+    context={"Country": "US"},
+    PlanType="Enterprise" # kwargs are merged into context
+)
+```
+
+## Tracking Analytics
+
+```python
+client.track(
+    event_name="checkout_success",
+    identity="user_123",
+    value=99.50,
+    currency="USD"
+)
+```

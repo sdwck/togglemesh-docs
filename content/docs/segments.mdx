@@ -1,0 +1,32 @@
+---
+title: Segments
+description: Group users into reusable blocks for simplified targeting across multiple flags.
+---
+
+# Segments
+
+If you find yourself writing the exact same Targeting Rule across 10 different flags (e.g., "Users with `IsBetaTester` = `true` AND `Email` EndsWith `@acme.com`"), you can simplify your workflow using **Segments**.
+
+A Segment is a reusable group of targeting rules that define a specific cohort of users. 
+
+## Creating a Segment
+
+You create Segments at the Environment level. 
+1. Go to your Environment Dashboard -> **Segments**.
+2. Create a new Segment (e.g., "Internal Acme Beta Testers").
+3. Define the rules using the exact same `RuleEngine` interface you use for flags.
+
+{/* TODO: Image - Screenshot of creating a Segment with multiple nested conditions */}
+
+## Using Segments in Flags
+
+Once a Segment is created, you can reference it inside any Feature Flag using the `InSegment` or `NotInSegment` operators.
+
+For example, on your `new_checkout_flow` flag, you can add a single rule:
+- **IF** User `InSegment` "Internal Acme Beta Testers"
+- **SERVE** Variation A
+
+If you ever need to add a new company to the Beta Tester cohort, you simply update the Segment. The change instantly cascades to all 10 flags referencing it, and the ToggleMesh SSE stream pushes the updated Segment definition to your SDKs in `<30ms`.
+
+> [!NOTE]
+> Under the hood, ToggleMesh SDKs sync Segments alongside Flags during initialization. When the SDK evaluates the `InSegment` operator, it performs the evaluation locally in-memory, ensuring zero network latency.

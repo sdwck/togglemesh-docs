@@ -1,0 +1,49 @@
+---
+title: Database Partitioning
+description: How ToggleMesh automatically manages data lifecycle and scale.
+---
+
+# Database Partitioning & Lifecycle
+
+When deploying feature flags at enterprise scale, the volume of Audit Logs and Analytics Events (Exposures and Tracks) can grow to billions of rows per month. If left unchecked, this data will bloat your database, degrade query performance, and increase infrastructure costs.
+
+ToggleMesh solves this natively using the **`PartitioningWorker`**.
+
+## The PartitioningWorker
+
+The `PartitioningWorker` is a highly-available background job (orchestrated via Quartz) that runs inside the ToggleMesh API. It is marked with `[DisallowConcurrentExecution]` to ensure that even if you run 10 instances of the API, only one node performs the cleanup at any given time.
+
+The worker is responsible for two distinct lifecycles: **Retention** and **Partitioning**.
+
+### 1. Data Retention (Cleanup)
+
+You can configure exactly how long you want to keep historical data using environment variables:
+
+```ini
+AuditLogs__RetentionDays=90
+Analytics__RetentionDays=30
+```
+
+Every time the worker runs, it evaluates these thresholds:
+- **Audit Logs**: Deletes rows from PostgreSQL older than `AuditLogs__RetentionDays`.
+- **Analytics**: Deletes raw exposure and track events. If you are using the Enterprise Stack, the worker will automatically execute `ALTER TABLE ... DELETE` queries directly against **ClickHouse**. Otherwise, it uses `ExecuteDeleteAsync` on PostgreSQL.
+
+### 2. Table Partitioning
+
+To keep `INSERT` and `SELECT` performance blisteringly fast on massive tables, ToggleMesh leverages native **PostgreSQL Table Partitioning**.
+
+Instead of storing all Audit Logs in a single monolithic table, ToggleMesh partitions the data by month. 
+
+When the `PartitioningWorker` runs, it proactively prepares the database for the *next* month by executing raw SQL:
+
+```sql
+CREATE TABLE IF NOT EXISTS "AuditLogs_2026_09" 
+PARTITION OF "AuditLogs" 
+FOR VALUES FROM ('2026-09-01') TO ('2026-10-01');
+```
+
+This ensures that:
+- Hot data (this month) is kept in a small, easily cacheable index.
+- Cold data can be easily dropped (by dropping the partition entirely) if needed, which is infinitely faster than running a massive `DELETE` statement.
+
+{/* TODO: Image - Diagram illustrating the PartitioningWorker dropping old partitions and creating new ones month by month */}

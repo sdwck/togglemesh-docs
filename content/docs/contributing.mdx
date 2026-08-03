@@ -1,0 +1,68 @@
+---
+title: Local Development
+description: How to run ToggleMesh locally and contribute to the open-source core.
+---
+
+# Contributing & Local Development
+
+ToggleMesh is proudly open-source. Whether you want to contribute a bug fix, add a new SDK, or just run the Core stack locally to see how it works, we've made the developer experience as frictionless as possible.
+
+## Architecture Map
+
+The ToggleMesh Core stack consists of three main components:
+
+1. **The API Node**: A high-performance .NET 8 application that serves the Admin UI, the REST API, and the Server-Sent Events (SSE) streaming endpoints.
+2. **PostgreSQL 18**: The primary source of truth for Flag configurations, Environments, Users, and standard Analytics.
+3. **Redis 7**: The distributed caching layer and Pub/Sub mechanism that broadcasts flag changes across API nodes in `<10ms`.
+
+{/* TODO: Image - Architecture diagram showing the API Node sitting between PostgreSQL, Redis, and connected SDK clients */}
+
+## Running Locally (Docker Compose)
+
+The easiest way to spin up the entire stack locally is using the provided `docker-compose.yml`.
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/sdwck/ToggleMesh.git
+   cd ToggleMesh
+   ```
+
+2. Start the stack:
+   ```bash
+   docker-compose up -d
+   ```
+
+This will automatically spin up PostgreSQL, Redis, and the ToggleMesh API node. By default, the API node automatically runs database migrations on startup (`TM_RUN_MIGRATIONS_ON_STARTUP=true`).
+
+### Accessing the Dashboard
+
+Once the containers report as `service_healthy`, navigate to:
+
+```
+http://localhost:5264
+```
+
+You can log in using the default Admin credentials (unless you overrode them via environment variables):
+- **Email**: `admin@togglemesh.local`
+- **Password**: `Admin123!`
+
+## Local Development (Without Docker for the API)
+
+If you want to actively modify the .NET source code, you can run the infrastructure via Docker and the API natively.
+
+1. Start only the infrastructure dependencies:
+   ```bash
+   docker-compose up -d db redis
+   ```
+
+2. Open `ToggleMesh.sln` in Visual Studio or Rider.
+
+3. Run the `ToggleMesh.API` project. It is configured to automatically connect to `localhost:5432` for Postgres and `localhost:6379` for Redis in Development mode.
+
+## Contributing Guidelines
+
+1. **Fork the Repository**: Create your own fork and branch off `main`.
+2. **Write Tests**: ToggleMesh relies heavily on integration tests (using `TestContainers` for Postgres/ClickHouse). Ensure any new features are covered in `ToggleMesh.IntegrationTests`.
+3. **Submit a PR**: Provide a clear description of the problem and your proposed solution.
+
+Welcome to the mesh!

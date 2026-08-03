@@ -1,0 +1,38 @@
+---
+title: A/B Testing & MAB
+description: How ToggleMesh evaluates experiments using Bayesian statistics.
+---
+
+# Experimentation & A/B Testing
+
+ToggleMesh isn't just for switching features on and off; it is a full-fledged experimentation platform designed to find out *which* variation of a feature performs best.
+
+## A/B/n Testing
+
+When you convert a Feature Flag into an Experiment, you link it to a specific **Metric** (e.g., "Checkout Completed"). ToggleMesh will automatically track Exposures (when a user evaluates the flag) and Tracks (when the user triggers the metric) and compute the conversion rate.
+
+Behind the scenes, ToggleMesh uses **Bayesian Statistics** rather than traditional Frequentist (p-value) math. 
+- For binary conversion goals (e.g., Button Clicks), it uses a **Beta Distribution** with Monte Carlo sampling (10,000+ iterations) to determine the exact probability that Variation B beats Variation A.
+- For revenue or continuous metrics (e.g., Average Order Value), it calculates Variance and uses a **Normal Distribution** to model the spread.
+
+{/* TODO: Image - Screenshot of an active Experiment dashboard showing the Bayesian Probability to Be Best chart */}
+
+## Multi-Armed Bandit (MAB)
+
+If you enable MAB on an experiment, ToggleMesh takes experimentation one step further.
+
+Instead of waiting for a 2-week A/B test to finish and manually declaring a winner, the ToggleMesh API will automatically shift traffic towards the winning variation in real-time. 
+It uses Thompson Sampling based on the Bayesian probabilities calculated by the `BayesianMathService`. If Variation B has an 80% chance to be the best, it will begin receiving roughly 80% of new traffic.
+
+This minimizes regret (lost conversions during the testing phase) and automates the optimization process.
+
+## Sample Ratio Mismatch (SRM) Detection
+
+A common pitfall in experimentation is a bug in the SDK or routing layer that causes traffic to be distributed unevenly (e.g., you set a 50/50 split, but the data shows a 60/40 split). If you analyze results with an SRM, your data is mathematically invalid.
+
+ToggleMesh protects against this natively via the `SrmWorker`.
+
+1. Once an experiment reaches **1,000 exposures**, the worker begins monitoring the traffic distribution.
+2. It runs a **Chi-Square Goodness-of-Fit test** against your expected Rollout weights.
+3. If the resulting p-value drops below `0.001`, the system detects an anomaly.
+4. ToggleMesh instantly fires an `experiment.srm_detected` webhook (to Slack, Discord, etc.) and pauses automatic MAB adjustments until you investigate the issue.

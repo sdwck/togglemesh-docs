@@ -1,0 +1,24 @@
+# Claims: data-access.mdx
+
+- **[CLAIM-DA-001]** Enterprise Stack writes raw telemetry directly to ClickHouse.
+- **[CLAIM-DA-002]** ClickHouse tables use the `MergeTree()` engine.
+- **[CLAIM-DA-003]** Tables are strictly partitioned by `Timestamp`.
+- **[CLAIM-DA-004]** Tables are ordered by `EnvironmentId`.
+- **[CLAIM-DA-005]** `AnalyticsExposures` table stores flag evaluation events.
+- **[CLAIM-DA-006]** `AnalyticsExposures` contains column `Id` of type `UUID`.
+- **[CLAIM-DA-007]** `AnalyticsExposures` contains column `EnvironmentId` of type `UUID`.
+- **[CLAIM-DA-008]** `AnalyticsExposures` contains column `FlagKey` of type `String`.
+- **[CLAIM-DA-009]** `AnalyticsExposures` contains column `Identity` of type `String`.
+- **[CLAIM-DA-010]** `AnalyticsExposures` contains column `VariationId` of type `Nullable(UUID)`.
+- **[CLAIM-DA-011]** `AnalyticsExposures` contains column `Properties` of type `String`.
+- **[CLAIM-DA-012]** `AnalyticsExposures` contains column `Timestamp` of type `DateTime`.
+- **[CLAIM-DA-013]** `AnalyticsTracks` table stores conversion events triggered via SDK `track()` method.
+- **[CLAIM-DA-014]** `AnalyticsTracks` contains column `Id` of type `UUID`.
+- **[CLAIM-DA-015]** `AnalyticsTracks` contains column `EnvironmentId` of type `UUID`.
+- **[CLAIM-DA-016]** `AnalyticsTracks` contains column `Identity` of type `String`.
+- **[CLAIM-DA-017]** `AnalyticsTracks` contains column `EventName` of type `String`.
+- **[CLAIM-DA-018]** `AnalyticsTracks` contains column `Value` of type `Nullable(Float64)`.
+- **[CLAIM-DA-019]** `AnalyticsTracks` contains column `Properties` of type `String`.
+- **[CLAIM-DA-020]** `AnalyticsTracks` contains column `Timestamp` of type `DateTime`.
+- **[CLAIM-DA-021]** Daily Active Users query uses `uniqExact(Identity)` on `AnalyticsExposures`.
+- **[CLAIM-DA-022]** PostgreSQL is row-oriented and not recommended for massive analytical queries in production. ClickHouse should be used instead.

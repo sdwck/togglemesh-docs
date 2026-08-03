@@ -1,0 +1,58 @@
+---
+title: Deployment & Hosting
+description: Options for deploying ToggleMesh in your infrastructure.
+---
+
+# Deployment Options
+
+ToggleMesh is built to run anywhere. Because the Control Plane is stateless and strictly separated from the Data Plane, deploying it is straightforward.
+
+You have three main options for running the ToggleMesh Control Plane.
+
+## 1. ToggleMesh Cloud (Managed)
+
+If you don't want to manage infrastructure, you can use the official ToggleMesh Cloud instance at **[app.togglemesh.dev](https://app.togglemesh.dev)**.
+
+- **Zero Setup**: Create an account and start using flags immediately.
+- **Always Up-to-date**: You get the latest features as soon as they are merged.
+- **Enterprise Ready**: Powered by the full Enterprise stack (Kafka + ClickHouse) for massive analytics ingestion.
+- **Status**: Currently free to use for testing and small workloads.
+
+## 2. Core Stack (Self-Hosted)
+
+The **Core Stack** is designed for 90% of use cases. It includes everything you need to run ToggleMesh at scale without the operational overhead of heavy big-data infrastructure.
+
+**Components:**
+- ToggleMesh API (Control Plane)
+- Admin UI (Dashboard)
+- PostgreSQL (Source of Truth)
+- Redis (Pub/Sub for Real-Time Sync & Caching)
+
+```bash
+# Clone the repository
+git clone https://github.com/sdwck/ToggleMesh.git
+cd ToggleMesh
+
+# Start the Core Stack
+docker-compose -f docker-compose.yml up -d
+```
+
+{/* TODO: Image - Diagram showing the Core Stack architecture (API, UI, Postgres, Redis) */}
+
+## 3. Enterprise Stack (Self-Hosted)
+
+The **Enterprise Stack** is designed for massive B2B/Enterprise workloads where you need to ingest tens of thousands of analytics events per second without dropping a single packet.
+
+**Additional Components:**
+- **Kafka**: Acts as an indestructible buffer for incoming analytics events (Exposures and Tracks), preventing traffic spikes from overwhelming the database.
+- **ClickHouse**: An ultra-fast columnar database used specifically for querying analytics and resolving Multi-Armed Bandit (MAB) algorithms in milliseconds.
+
+```bash
+# Start the Enterprise Stack
+docker-compose -f docker-compose.enterprise.yml up -d
+```
+
+> [!TIP]
+> ToggleMesh API nodes automatically detect the presence of Kafka/ClickHouse connection strings in their environment variables. If present, the API will seamlessly route all analytics traffic through Kafka and query via ClickHouse instead of PostgreSQL.
+
+{/* TODO: Image - Diagram showing the Enterprise Stack architecture adding Kafka and ClickHouse into the mix */}

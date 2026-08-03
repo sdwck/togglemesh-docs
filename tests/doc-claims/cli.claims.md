@@ -1,0 +1,24 @@
+# Claims: cli.mdx
+
+- **[CLAIM-CLI-001]** Core CLI installation via npm is `npm install -g togglemesh`.
+- **[CLAIM-CLI-002]** Core CLI on-the-fly execution via npx is `npx togglemesh sync`.
+- **[CLAIM-CLI-003]** Core CLI installation via .NET Global Tool is `dotnet tool install --global ToggleMesh.CLI`.
+- **[CLAIM-CLI-004]** Command `togglemesh config` launches interactive configuration wizard or sets saved credentials.
+- **[CLAIM-CLI-005]** Command `togglemesh sync` synchronizes feature flags and generates code constants.
+- **[CLAIM-CLI-006]** CLI flag `-k` / `--api-key` specifies API Key or PAT.
+- **[CLAIM-CLI-007]** CLI flag `-a` / `--address` specifies Control Plane base URL.
+- **[CLAIM-CLI-008]** CLI flag `-l` / `--lang` specifies target language (`csharp`, `typescript`, `go`, `python`) and is auto-detected if omitted.
+- **[CLAIM-CLI-009]** CLI flag `-o` / `--out` specifies output file path and is auto-detected if omitted.
+- **[CLAIM-CLI-010]** CLI flag `-p` / `--project-id` specifies Project ID UUID (required when authenticating with PAT).
+- **[CLAIM-CLI-011]** CLI flag `-y` / `--yes` enables non-interactive mode.
+- **[CLAIM-CLI-012]** Running `togglemesh sync` without arguments automatically discovers language and writes to default output path.
+- **[CLAIM-CLI-013]** Python package includes an embedded CLI wrapper.
+- **[CLAIM-CLI-014]** Python installation command is `pip install togglemesh`.
+- **[CLAIM-CLI-015]** Python CLI supports `togglemesh config` and `togglemesh sync` commands.
+- **[CLAIM-CLI-016]** Native Go CLI installation command is `go install github.com/sdwck/ToggleMesh/sdks/go/cmd/togglemesh@latest`.
+- **[CLAIM-CLI-017]** Go CLI flag `-key` specifies API Key or PAT.
+- **[CLAIM-CLI-018]** Go CLI flag `-address` specifies Control Plane base URL.
+- **[CLAIM-CLI-019]** Go CLI flag `-project` specifies Project ID.
+- **[CLAIM-CLI-020]** Go CLI flag `-out` specifies Generated file path (default: `flags.go`).
+- **[CLAIM-CLI-021]** Go CLI flag `-pkg` specifies Package name for generated Go file (default: `main`).
+- **[CLAIM-CLI-022]** Go directive integration example is `//go:generate togglemesh sync -out flags.go -pkg main`.

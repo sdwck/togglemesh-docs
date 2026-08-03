@@ -1,0 +1,80 @@
+---
+title: Custom Operators
+description: Extending ToggleMesh with your own business logic using IRuleOperator
+---
+
+# Custom Operators
+
+ToggleMesh ships with a robust standard library of targeting operators (`Equals`, `InList`, `SemVerGreaterThan`, `Regex`, etc.). However, enterprise applications often have proprietary business logic that cannot be expressed with standard operators.
+
+For example, you might want to target users based on a proprietary geolocation hash, a custom permissions bitmask, or a specialized time-window calculation.
+
+ToggleMesh allows you to inject **Custom Operators** directly into the local evaluation engine.
+
+## The `IRuleOperator` Interface
+
+In the .NET SDK, custom operators are created by implementing the `IRuleOperator` interface from `ToggleMesh.Common.Rules`.
+
+This interface forces you to define three things:
+1. `Name`: The unique string identifier for your operator.
+2. `Compile()`: The cold-path method that parses the rule value once.
+3. `Evaluate()`: The hot-path method that executes the logic on every flag check.
+
+{/* TODO: Image - Diagram showing the separation of Compile (Cold Path) and Evaluate (Hot Path) */}
+
+### Example: Implementing a Bitmask Operator
+
+Let's implement a custom operator that checks if a user's permission bitmask contains a required flag.
+
+```csharp
+using ToggleMesh.Common.Rules;
+
+public class HasPermissionBitmaskOperator : IRuleOperator
+{
+    // This name must match what you configure in the Admin UI
+    public string Name => "HasPermission";
+
+    // COLD PATH: Executed ONCE when the rule is synced from the server.
+    // We parse the string (e.g. "4" for Write Access) into an integer.
+    public object? Compile(string ruleValue)
+    {
+        if (int.TryParse(ruleValue, out var bit))
+            return bit;
+            
+        return null; // Invalid rule configuration
+    }
+
+    // HOT PATH: Executed locally in memory on EVERY flag evaluation.
+    // MUST BE ZERO ALLOCATION!
+    public bool Evaluate(string userValue, object? compiledRuleValue)
+    {
+        // 1. Cast the pre-compiled rule value
+        if (compiledRuleValue is not int requiredBit)
+            return false;
+
+        // 2. Parse the user's current context value
+        if (!int.TryParse(userValue, out var userBitmask))
+            return false;
+
+        // 3. Evaluate the proprietary logic
+        return (userBitmask & requiredBit) == requiredBit;
+    }
+}
+```
+
+## Registering Your Operator
+
+Once you've implemented `IRuleOperator`, you simply register it as a Singleton in your Dependency Injection container alongside the ToggleMesh SDK:
+
+```csharp
+// Program.cs
+builder.Services.AddToggleMeshClient(options => {
+    options.BaseUrl = "http://localhost:5264";
+    options.ApiKey = "tm_server_xxxxxxxx";
+});
+
+// Inject your custom operator!
+builder.Services.AddSingleton<IRuleOperator, HasPermissionBitmaskOperator>();
+```
+
+When ToggleMesh evaluates a flag that uses the `HasPermission` operator, it will automatically route the evaluation to your highly optimized, locally running C# code.

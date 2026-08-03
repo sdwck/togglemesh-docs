@@ -1,0 +1,52 @@
+---
+title: Unreal Engine SDK
+description: ToggleMesh Client SDK for Unreal Engine 5.
+---
+
+# Unreal Engine SDK
+
+The ToggleMesh Unreal SDK allows you to control game features, live-ops events, and A/B test UI variations directly from the ToggleMesh Admin UI without requiring a game patch.
+
+## Installation
+
+1. Copy the `ToggleMesh` folder from the `sdks/unreal` directory into your project's `Plugins/` folder.
+2. Regenerate your Visual Studio/Rider project files.
+3. Open Unreal Editor and enable the **ToggleMesh** plugin in Edit -> Plugins.
+
+## Initialization
+
+You can initialize ToggleMesh via C++ or Blueprints.
+
+### Blueprints
+1. In your `GameInstance` or `PlayerController`, search for the **Initialize ToggleMesh** node.
+2. Pass in your **Client Key** and the **Base URL**.
+3. Bind an event to the `OnReady` delegate to know when flags have been successfully synced.
+
+### C++
+```cpp
+UToggleMeshSubsystem* ToggleMesh = GetGameInstance()->GetSubsystem<UToggleMeshSubsystem>();
+ToggleMesh->Initialize("tm_client_...", "https://api.yourdomain.com");
+```
+
+## Evaluating Flags
+
+ToggleMesh is fully integrated into the Unreal Blueprint system.
+
+### Blueprints
+Search for the **Get Feature Flag (Boolean)** or **Get Feature Flag (String)** nodes. Pass in the `FlagKey` and the player's unique `Identity` (e.g., their Epic Account ID or a random UUID).
+
+{/* TODO: Image - Screenshot of an Unreal Engine Blueprint showing the 'Get Feature Flag' node branching game logic */}
+
+### C++
+```cpp
+bool bIsHardModeEnabled = ToggleMesh->GetBoolFlag("hard-mode", PlayerIdentity, false);
+FString SeasonalEventName = ToggleMesh->GetStringFlag("seasonal-event", PlayerIdentity, "none");
+```
+
+## Tracking Analytics
+
+To run MAB experiments on game metrics (e.g., tracking if a player bought an item in the cash shop), use the Track node.
+
+```cpp
+ToggleMesh->TrackEvent("item_purchased", PlayerIdentity, 4.99f);
+```

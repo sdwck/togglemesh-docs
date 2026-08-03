@@ -1,0 +1,35 @@
+# Claims: quickstart.mdx
+
+- **[CLAIM-QS-001]** Quickstart uses Core Stack composed of PostgreSQL and Redis.
+- **[CLAIM-QS-002]** Docker Compose file is downloaded from `https://raw.githubusercontent.com/sdwck/ToggleMesh/main/docker-compose.yml`.
+- **[CLAIM-QS-003]** Environment example file is downloaded from `https://raw.githubusercontent.com/sdwck/ToggleMesh/main/.env.example`.
+- **[CLAIM-QS-004]** Admin UI is served locally at `http://localhost:5264`.
+- **[CLAIM-QS-005]** C# SDK NuGet package name is `ToggleMesh.SDK`.
+- **[CLAIM-QS-006]** Node.js SDK npm package name is `togglemesh-node`.
+- **[CLAIM-QS-007]** Python SDK PyPI package name is `togglemesh`.
+- **[CLAIM-QS-008]** Go SDK module path is `github.com/sdwck/ToggleMesh/sdks/go`.
+- **[CLAIM-QS-009]** React Client SDK npm package name is `togglemesh-js`.
+- **[CLAIM-QS-010]** ToggleMesh SDKs evaluate flags locally in memory.
+- **[CLAIM-QS-011]** Local evaluation uses Server-Sent Events (SSE) streaming connection for real-time updates.
+- **[CLAIM-QS-012]** C# SDK registers via `builder.Services.AddToggleMeshClient(...)`.
+- **[CLAIM-QS-013]** C# SDK accepts `options.BaseUrl` and `options.ApiKey`.
+- **[CLAIM-QS-014]** C# SDK Server API Keys use prefix `tm_server_`.
+- **[CLAIM-QS-015]** C# SDK ambient context helper is registered via `AddToggleMeshHttpContext()`.
+- **[CLAIM-QS-016]** C# SDK evaluation method is `toggleMesh.IsEnabled(flagKey, defaultValue)`.
+- **[CLAIM-QS-017]** Node.js SDK imports `ToggleMeshClient` from `togglemesh-node`.
+- **[CLAIM-QS-018]** Node.js SDK constructor accepts `baseUrl` and `serverKey`.
+- **[CLAIM-QS-019]** Node.js SDK startup method is `await client.start()`.
+- **[CLAIM-QS-020]** Node.js SDK evaluation method is `client.isEnabled(flagKey, defaultValue, { identity })`.
+- **[CLAIM-QS-021]** Python SDK imports `ToggleMeshClient` and `ToggleMeshOptions` from `togglemesh`.
+- **[CLAIM-QS-022]** Python SDK constructor takes `ToggleMeshOptions(base_url=..., server_key=...)`.
+- **[CLAIM-QS-023]** Python SDK evaluation method is `client.is_enabled(flag_key, default_value=..., identity=...)`.
+- **[CLAIM-QS-024]** Go SDK imports `github.com/sdwck/ToggleMesh/sdks/go/togglemesh`.
+- **[CLAIM-QS-025]** Go SDK constructs client via `togglemesh.NewClient(togglemesh.WithBaseURL(...), togglemesh.WithAPIKey(...))`.
+- **[CLAIM-QS-026]** Go SDK shutdown method is `client.Close()`.
+- **[CLAIM-QS-027]** Go SDK evaluation method is `client.IsEnabled(flagKey, togglemesh.WithIdentity(...))`.
+- **[CLAIM-QS-028]** React SDK imports `ToggleMeshClient` from `togglemesh-js`.
+- **[CLAIM-QS-029]** React SDK imports `ToggleMeshProvider` and `useFeatureFlag` from `togglemesh-js/react`.
+- **[CLAIM-SDK-030]** React SDK constructor accepts `baseUrl` and `clientKey`.
+- **[CLAIM-SDK-031]** React SDK Client API Keys use prefix `tm_client_`.
+- **[CLAIM-SDK-032]** React SDK user identification method is `client.identify(identity, context)`.
+- **[CLAIM-SDK-033]** React hook `useFeatureFlag(flagKey, defaultValue)` returns a boolean and reacts in real-time.

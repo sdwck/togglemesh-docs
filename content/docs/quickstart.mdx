@@ -1,64 +1,181 @@
 ---
 title: Quickstart
-description: Get started with ToggleMesh in 5 minutes
+description: Get up and running with ToggleMesh in 5 minutes
 ---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
 # Quickstart Guide
 
-This guide will help you install the ToggleMesh SDK and evaluate your first feature flag in a C# / .NET application.
+This guide will walk you through deploying your first ToggleMesh server via Docker Compose and evaluating a feature flag across multiple languages.
 
-## Prerequisites
+## Step 1: Start the ToggleMesh Server
 
-- A running ToggleMesh server (see [Self-Hosting Guide](/docs/self-hosting))
-- .NET 8, 9, or 10 SDK installed
-
-## Step 1: Install the SDK & CLI
-
-Install the official C# SDK and CLI tool:
+ToggleMesh can be deployed anywhere using Docker. For this quickstart, we will use the Core Stack (PostgreSQL + Redis).
 
 ```bash
-dotnet add package ToggleMesh.SDK
-dotnet tool install --global ToggleMesh.CLI
+curl -o docker-compose.yml https://raw.githubusercontent.com/sdwck/ToggleMesh/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/sdwck/ToggleMesh/main/.env.example
+docker compose up -d
 ```
 
-## Step 2: Register the SDK in Program.cs
+Once running, navigate to the Admin UI at `http://localhost:5264`. Create a new Project, a new Environment, and copy your **Server SDK API Key**.
 
-Inject the ToggleMesh client into your Dependency Injection container:
+{/* TODO: Image - Screenshot of the Admin UI highlighting where to find and copy the Server SDK API Key */}
 
-```csharp
-// Program.cs
-builder.Services.AddToggleMeshClient(options => 
-{
-    options.BaseUrl = "https://api.togglemesh.dev"; // Your self-hosted server
-    options.ApiKey = "tm_server_xxxxxxxx";
-}).AddToggleMeshHttpContext();
-```
+## Step 2: Install the SDK
 
-## Step 3: Evaluate Flags Locally
+Install the official SDK for your preferred language to connect to the Control Plane.
 
-Use `IToggleMeshClient` in your services:
+<Tabs items={['C# (.NET)', 'Node.js', 'Python', 'Go', 'React (Client)']} groupId="sdk">
+  <Tab value="C# (.NET)">
+    ```bash
+    dotnet add package ToggleMesh.SDK
+    ```
+  </Tab>
+  <Tab value="Node.js">
+    ```bash
+    npm install togglemesh-node
+    ```
+  </Tab>
+  <Tab value="Python">
+    ```bash
+    pip install togglemesh
+    ```
+  </Tab>
+  <Tab value="Go">
+    ```bash
+    go get github.com/sdwck/ToggleMesh/sdks/go
+    ```
+  </Tab>
+  <Tab value="React (Client)">
+    ```bash
+    npm install togglemesh-js
+    ```
+  </Tab>
+</Tabs>
 
-```csharp
-public class CheckoutService
-{
-    private readonly IToggleMeshClient _toggleMesh;
+## Step 3: Initialize the Client & Evaluate a Flag
 
-    public CheckoutService(IToggleMeshClient toggleMesh)
+ToggleMesh SDKs evaluate flags **locally** in memory using a Server-Sent Events (SSE) streaming connection to ensure zero-latency checks and immediate updates.
+
+<Tabs items={['C# (.NET)', 'Node.js', 'Python', 'Go', 'React (Client)']} groupId="sdk">
+  <Tab value="C# (.NET)">
+    ```csharp
+    // Program.cs
+    builder.Services.AddToggleMeshClient(options => 
     {
-        _toggleMesh = toggleMesh;
+        options.BaseUrl = "http://localhost:5264";
+        options.ApiKey = "tm_server_xxxxxxxx";
+    });
+    builder.Services.AddToggleMeshHttpContext();
+
+    // In your service
+    public class CheckoutService(IToggleMeshClient toggleMesh)
+    {
+        public void ProcessOrder()
+        {
+            // Zero-allocation, local memory evaluation!
+            if (toggleMesh.IsEnabled("new-checkout-flow", defaultValue: false))
+            {
+                ExecuteNewFlow();
+            }
+            else
+            {
+                ExecuteLegacyFlow();
+            }
+        }
+    }
+    ```
+  </Tab>
+  <Tab value="Node.js">
+    ```javascript
+    import { ToggleMeshClient } from 'togglemesh-node';
+
+    const client = new ToggleMeshClient({
+      baseUrl: 'http://localhost:5264',
+      serverKey: 'tm_server_xxxxxxxx'
+    });
+
+    await client.start();
+
+    // Local evaluation, no network request
+    if (client.isEnabled('new-checkout-flow', false, { identity: 'user_123' })) {
+      executeNewFlow();
+    } else {
+      executeLegacyFlow();
+    }
+    ```
+  </Tab>
+  <Tab value="Python">
+    ```python
+    from togglemesh import ToggleMeshClient, ToggleMeshOptions
+
+    client = ToggleMeshClient(ToggleMeshOptions(
+        base_url="http://localhost:5264",
+        server_key="tm_server_xxxxxxxx"
+    ))
+
+    # Automatically syncs rules in background via SSE
+    if client.is_enabled("new-checkout-flow", default_value=False, identity="user_123"):
+        execute_new_flow()
+    else:
+        execute_legacy_flow()
+    ```
+  </Tab>
+  <Tab value="Go">
+    ```go
+    import "github.com/sdwck/ToggleMesh/sdks/go/togglemesh"
+
+    client, err := togglemesh.NewClient(
+        togglemesh.WithBaseURL("http://localhost:5264"),
+        togglemesh.WithAPIKey("tm_server_xxxxxxxx"),
+    )
+    if err != nil {
+        panic(err)
+    }
+    defer client.Close()
+
+    if client.IsEnabled("new-checkout-flow", togglemesh.WithIdentity("user_123")) {
+        executeNewFlow()
+    } else {
+        executeLegacyFlow()
+    }
+    ```
+  </Tab>
+  <Tab value="React (Client)">
+    ```tsx
+    import { ToggleMeshClient } from 'togglemesh-js';
+    import { ToggleMeshProvider, useFeatureFlag } from 'togglemesh-js/react';
+
+    const client = new ToggleMeshClient({
+      baseUrl: 'http://localhost:5264',
+      clientKey: 'tm_client_xxxxxxxx'
+    });
+
+    client.identify('user_123', { Country: 'US' });
+
+    function App() {
+      return (
+        <ToggleMeshProvider client={client}>
+          <CheckoutComponent />
+        </ToggleMeshProvider>
+      );
     }
 
-    public void ProcessOrder()
-    {
-        // Zero-allocation, local memory evaluation
-        if (_toggleMesh.IsEnabled("new-checkout-flow"))
-        {
-            ExecuteNewFlow();
-        }
-        else
-        {
-            ExecuteLegacyFlow();
-        }
+    function CheckoutComponent() {
+      // Reacts in real-time to flag changes
+      const isNewFlowEnabled = useFeatureFlag('new-checkout-flow', false);
+
+      return isNewFlowEnabled ? <NewFlow /> : <LegacyFlow />;
     }
-}
-```
+    ```
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+Now that you've successfully evaluated your first flag, dive deeper into the core concepts:
+
+- Understand how **[Projects & Environments](/docs/core-concepts)** isolate your data.
+- Learn about **[Context & Targeting Rules](/docs/core-concepts#targeting)** to roll out features gradually.

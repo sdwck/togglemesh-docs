@@ -1,0 +1,21 @@
+# Claims: observability.mdx
+
+- **[CLAIM-OBS-001]** ToggleMesh observability is built on OpenTelemetry (OTel) and Audit Logs.
+- **[CLAIM-OBS-002]** OpenTelemetry exposes both Metrics and Traces.
+- **[CLAIM-OBS-003]** OpenTelemetry data can be exported to Prometheus, Grafana, or Datadog.
+- **[CLAIM-OBS-004]** All multi-tenant metrics are automatically tagged with `environment_id`.
+- **[CLAIM-OBS-005]** Counter metric `togglemesh.flags.evaluations` measures flag evaluations in the Data Plane.
+- **[CLAIM-OBS-006]** Counter metric `togglemesh.flags.updates` measures flag changes in the Control Plane.
+- **[CLAIM-OBS-007]** Gauge metric `togglemesh.sse.connections.active` measures active Server-Sent Event connections.
+- **[CLAIM-OBS-008]** Counter metric `togglemesh.analytics.ingested` measures raw analytics events before flush.
+- **[CLAIM-OBS-009]** Counter metric `togglemesh.cache.requests` measures cache hits/misses for API keys and Environment metadata.
+- **[CLAIM-OBS-010]** Admin UI mutations generate immutable Audit Logs.
+- **[CLAIM-OBS-011]** Audit Logs are stored in PostgreSQL.
+- **[CLAIM-OBS-012]** Audit Logs are viewable in the Admin UI under the `/audit` route.
+- **[CLAIM-OBS-013]** Audit Logs are pruned automatically by `PartitioningWorker`.
+- **[CLAIM-OBS-014]** Audit Log retention is configured via `AuditLogs__RetentionDays`.
+- **[CLAIM-OBS-015]** Audit Logs contain Actor (Email or API Key ID).
+- **[CLAIM-OBS-016]** Audit Logs contain Action (e.g. `UpdateFlagSettings`).
+- **[CLAIM-OBS-017]** Audit Logs contain Target resource ID.
+- **[CLAIM-OBS-018]** Audit Logs contain Timestamp.
+- **[CLAIM-OBS-019]** Audit Logs contain JSON diff of previous state vs new state.

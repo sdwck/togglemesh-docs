@@ -1,0 +1,55 @@
+---
+title: Migrating to ToggleMesh
+description: Guides and terminology maps for migrating from LaunchDarkly and Statsig
+---
+
+# Migrating to ToggleMesh
+
+Moving from an expensive managed service to a self-hosted Enterprise ToggleMesh deployment can dramatically reduce your cloud spend and improve data privacy (ensuring 100% of PII stays in your VPC). 
+
+This guide will help CTOs and developers transition smoothly.
+
+## Terminology Map
+
+If your team is used to the nomenclature of LaunchDarkly or Statsig, use this translation table to map concepts to ToggleMesh.
+
+| LaunchDarkly Term | Statsig Term | ToggleMesh Term | Explanation |
+| :--- | :--- | :--- | :--- |
+| Project | Project | **Project** | The top-level logical container for an application. |
+| Environment | Environment | **Environment** | Dev, Staging, or Prod. Holds isolated states and API keys. |
+| Feature Flag | Feature Gate / Dynamic Config | **Feature Flag** | Can return booleans, strings, JSON, or numbers. |
+| Variation | Variant | **Variation** | One of the possible return values of a Feature Flag. |
+| Target | Override / Target | **Target Rule** | A specific `IF/THEN` rule evaluating user attributes. |
+| Segment | Segment | **Segment** | A reusable list of Target Rules that multiple flags can reference. |
+| Context / User | User Object | **Context** | The dictionary of attributes (ID, email, tier) passed to the SDK. |
+| Experiment | Experiment | **Experiment** | An active A/B test routing traffic based on variations. |
+| - | Autotune | **MAB (Multi-Armed Bandit)** | Built-in Bayesian traffic optimization that shifts traffic to the winning variant automatically. |
+
+## Migrating from LaunchDarkly
+
+LaunchDarkly heavily relies on HTTP streaming and complex context objects. Transitioning to ToggleMesh is structurally very similar.
+
+### 1. SDK Replacement
+ToggleMesh SDKs share the same initialization patterns.
+* Replace `LDClient` with `ToggleMeshClient`.
+* Replace `LDContext` with your language's `ToggleMeshContext` dictionary/object.
+* Replace `boolVariation` with `isEnabled` (or equivalent multi-variate getters like `getStringVariation`).
+
+{/* TODO: Image - Side-by-side code snippet or visual comparing LaunchDarkly init vs ToggleMesh init */}
+
+### 2. Exporting Data
+Currently, we recommend manually exporting your critical flags from LaunchDarkly via their REST API and using the ToggleMesh Admin UI to recreate them. A terraform provider is on the roadmap to automate this mapping.
+
+### 3. Server-Sent Events (SSE)
+Like LaunchDarkly, ToggleMesh uses SSE for real-time invalidation. Ensure your reverse proxies (Nginx/Traefik) are configured to not timeout long-lived connections (see the [Troubleshooting Guide](/docs/troubleshooting)).
+
+## Migrating from Statsig
+
+Statsig combines feature flags with deep product analytics. ToggleMesh replicates this using its high-throughput Kafka + ClickHouse enterprise stack.
+
+### 1. Analytics Events
+In Statsig, you call `logEvent()`. In ToggleMesh, you call `track()`.
+ToggleMesh natively ingests these events into ClickHouse to calculate metric aggregations and run Bayesian A/B tests.
+
+### 2. Identity Pseudonymization
+Unlike Statsig, ToggleMesh hashes user identifiers *locally* in the SDK by default before transmission. If you need raw identifiers in ClickHouse for custom queries, you must explicitly pass them as Custom Properties inside the `track()` call, provided your internal GDPR policies allow it.

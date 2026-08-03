@@ -1,0 +1,69 @@
+---
+title: Node.js SDK
+description: ToggleMesh Server SDK for Node.js / TypeScript.
+---
+
+# Node.js SDK
+
+The ToggleMesh Node.js SDK evaluates flags locally in-memory, ensuring your Express, Fastify, or NestJS application never blocks on a network request when checking a feature flag.
+
+## Installation
+
+```bash
+npm install togglemesh-node
+```
+
+## Initialization
+
+You must instantiate the client and call `start()` to sync the initial state from the API and open the SSE stream.
+
+```typescript
+import { ToggleMeshClient } from 'togglemesh-node';
+
+const client = new ToggleMeshClient({
+    serverKey: 'tm_srv_...',
+    baseUrl: 'http://localhost:5264'
+});
+
+// Await the initial sync before starting your server
+await client.start();
+```
+
+## Evaluating Flags
+
+The client provides strongly typed evaluation methods depending on the flag type you are querying.
+
+```typescript
+// Boolean
+const isEnabled = client.isEnabled('new-checkout', false, { identity: 'user_123' });
+
+// String
+const buttonColor = client.getStringValue('checkout-btn-color', 'blue', { identity: 'user_123' });
+
+// JSON
+const config = client.getJsonValue('advanced-config', { retries: 3 }, { identity: 'user_123' });
+```
+
+### Context & Targeting
+
+If your targeting rules depend on custom properties (e.g., `Country`, `PlanType`), pass them in the `context` object:
+
+```typescript
+const isEnabled = client.isEnabled('beta-feature', false, {
+    identity: 'user_123',
+    context: {
+        Country: 'US',
+        PlanType: 'Enterprise'
+    }
+});
+```
+
+## Tracking Analytics
+
+```typescript
+client.track('checkout_success', {
+    identity: 'user_123',
+    value: 99.50, // Optional revenue value
+    context: { currency: 'USD' } // Optional metadata
+});
+```

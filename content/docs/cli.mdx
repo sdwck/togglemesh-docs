@@ -1,0 +1,94 @@
+---
+title: Command Line Interface (CLI)
+description: Complete CLI reference, parameters, and flags for ToggleMesh code generation.
+---
+
+# Command Line Interface (CLI) Reference
+
+ToggleMesh provides native CLI tools to synchronize feature flags directly from your Control Plane into your codebase, generating strongly-typed constants.
+
+---
+
+## 1. Core CLI (`togglemesh`)
+
+The primary CLI engine is a high-performance native application. You can install and run it globally via your choice of package manager:
+
+### Installation Options
+
+- **via NPM / NPX**:
+  ```bash
+  npm install -g togglemesh
+  # or execute on-the-fly
+  npx togglemesh sync
+  ```
+
+- **via .NET Global Tool**:
+  ```bash
+  dotnet tool install --global ToggleMesh.CLI
+  ```
+
+---
+
+### Commands
+
+- `togglemesh config`: Launches the interactive configuration wizard or sets saved credentials.
+- `togglemesh sync`: Synchronizes feature flags and generates type-safe code constants.
+
+### Available Flags & Parameters
+
+| Short | Long | Description |
+| :--- | :--- | :--- |
+| `-k` | `--api-key` | Environment API Key (`tm_server_...`) or PAT (`tmp_...`). |
+| `-a` | `--address` | Control Plane base URL (e.g., `https://api.togglemesh.dev`). |
+| `-l` | `--lang` | Target language (`csharp`, `typescript`, `go`, `python`). Auto-detected if omitted. |
+| `-o` | `--out` | Output file path (e.g., `./src/flags.ts`). Auto-detected if omitted. |
+| `-p` | `--project-id` | Project ID UUID (required when authenticating with a PAT). |
+| `-y` | `--yes` | Non-interactive mode (automatically confirms prompts). |
+
+> [!TIP]
+> Running `togglemesh sync` without arguments automatically discovers your project language (C#, TypeScript, Go, or Python) and writes to the default output path!
+
+---
+
+## 2. Python Package Integration
+
+The Python SDK (`togglemesh`) includes an embedded CLI wrapper.
+
+```bash
+pip install togglemesh
+
+# Interactive config
+togglemesh config
+
+# Sync flags
+togglemesh sync
+```
+
+---
+
+## 3. Native Go CLI
+
+The Go SDK includes a standalone Go CLI tailored specifically for `go generate` workflows.
+
+### Installation
+
+```bash
+go install github.com/sdwck/ToggleMesh/sdks/go/cmd/togglemesh@latest
+```
+
+### Available Flags (`config` and `sync`)
+
+| Flag | Type | Description |
+| :--- | :--- | :--- |
+| `-key` | `string` | API Key or PAT (saved globally in `~/.togglemesh`). |
+| `-address` | `string` | Control Plane base URL (saved globally in `~/.togglemesh`). |
+| `-project` | `string` | Project ID (saved locally in `.togglemesh/config.json`). |
+| `-out` | `string` | Generated file path (default: `flags.go`). |
+| `-pkg` | `string` | Package name for generated Go file (default: `main`). |
+
+### Go Directive Integration
+
+```go
+//go:generate togglemesh sync -out flags.go -pkg main
+package main
+```

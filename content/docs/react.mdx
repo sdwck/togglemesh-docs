@@ -1,0 +1,80 @@
+---
+title: React SDK
+description: ToggleMesh Client SDK for React applications.
+---
+
+# React SDK
+
+The ToggleMesh React SDK (`togglemesh-js`) provides native hooks that automatically re-render your components when a feature flag changes.
+
+## Installation
+
+```bash
+npm install togglemesh-js
+```
+
+## Initialization
+
+Initialize the client with your **Client Key** (starts with `tm_client_`) and wrap your app in `ToggleMeshProvider`. Call `identify()` to trigger initial user evaluation.
+
+> [!WARNING]
+> Because React runs in the browser, you must use a **Client Key**, not a Server Key. Client Keys restrict the SDK from downloading targeting rules and only fetch evaluated results for a specific Identity.
+
+```tsx
+import React, { useEffect } from 'react';
+import { ToggleMeshClient } from 'togglemesh-js';
+import { ToggleMeshProvider } from 'togglemesh-js/react';
+
+const tmClient = new ToggleMeshClient({
+  baseUrl: 'https://api.togglemesh.dev',
+  clientKey: 'tm_client_your_api_key_here',
+  refreshInterval: 30
+});
+
+function App() {
+  useEffect(() => {
+    // Identify the user with context properties. 
+    tmClient.identify('user_123', {
+      Country: 'US',
+      Plan: 'Pro'
+    });
+  }, []);
+
+  return (
+    <ToggleMeshProvider client={tmClient}>
+      <CheckoutPage />
+    </ToggleMeshProvider>
+  );
+}
+```
+
+## Evaluating Flags
+
+Use the `useFeatureFlag` and `useFeatureFlagVariation` hooks inside any component:
+
+```tsx
+import React from 'react';
+import { useFeatureFlag, useFeatureFlagVariation } from 'togglemesh-js/react';
+
+export function CheckoutPage() {
+  // Evaluates instantly from in-memory cache
+  const showPaypal = useFeatureFlag('new-checkout-flow');
+
+  // Evaluate typed strings
+  const buttonColor = useFeatureFlagVariation('checkout-button-color', 'blue');
+
+  return (
+    <div className="payment-container" style={{ backgroundColor: buttonColor }}>
+      {showPaypal ? <PayPalButton /> : <CreditCardForm />}
+    </div>
+  );
+}
+```
+
+## Tracking Analytics
+
+To track conversion events:
+
+```typescript
+tmClient.track('button_clicked', { color: 'red' }, 1.0);
+```

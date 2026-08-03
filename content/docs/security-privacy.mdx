@@ -1,0 +1,37 @@
+---
+title: Security & Privacy
+description: Exploring ToggleMesh's RBAC, 100% VPC readiness, and GDPR API.
+---
+
+# Security & Privacy
+
+ToggleMesh is built from the ground up to support strict enterprise security and privacy requirements. Feature flags often intersect with sensitive user data, so keeping that data secure is our top priority.
+
+## 100% VPC Ready
+
+Unlike many SaaS feature flag platforms that require you to punch holes in your firewall or send sensitive PII to a third-party server for evaluation, ToggleMesh is designed for **100% VPC (Virtual Private Cloud) isolation**.
+
+Because you can easily self-host the Control Plane (via the Core or Enterprise Stack), and because the Data Plane evaluates flags locally in memory, **zero PII ever leaves your network**. 
+
+## RBAC (Role-Based Access Control)
+
+ToggleMesh includes a granular permission system. Not every engineer should have the ability to toggle a flag in production. 
+
+Using the Admin UI, you can assign users specific roles at the Project or Environment level:
+- **Viewer**: Can view flags and analytics, but cannot make changes.
+- **Editor**: Can create and update flags, but cannot modify Environment settings.
+- **Admin**: Full control over the Project and its Environments.
+
+{/* TODO: Image - Screenshot of the RBAC Role Assignment UI in the Admin Dashboard */}
+
+## GDPR & The Right to be Forgotten
+
+If a user requests that their data be deleted from your systems under GDPR (or CCPA), you are legally obligated to purge their analytics data. ToggleMesh makes this incredibly easy via the **Purge Identity API**.
+
+When you send a `POST` request to the `/projects/{projectId}/privacy/purge-identity` endpoint with a user's `Identity`, ToggleMesh will automatically:
+
+1. Locate all `AnalyticsExposures` and `AnalyticsTracks` associated with that identity (using the secure Hash).
+2. Issue a coordinated `DELETE` command across all Environments in that Project.
+3. If you are running the Enterprise Stack, it will simultaneously issue an `ALTER TABLE ... DELETE` command to ClickHouse to ensure the data is scrubbed from the analytics warehouse as well.
+
+This ensures 100% compliance with data privacy regulations without requiring manual DBA intervention.

@@ -1,0 +1,47 @@
+---
+title: Targeting & Rollouts
+description: Serve variations to specific users using rules and percentage distributions.
+---
+
+# Targeting & Rollouts
+
+ToggleMesh evaluates feature flags instantly using an internal `RuleEngine`. You have full control over who sees which feature, when they see it, and at what percentage.
+
+## Targeting Rules
+
+A Targeting Rule consists of a **Condition** and a **Result**.
+If the condition is met, the user is served the result.
+
+You can build complex conditions using standard operators:
+- **String Matching**: `Equals`, `StartsWith`, `EndsWith`, `Contains`
+- **Regex**: `MatchesRegex`
+- **Numeric**: `GreaterThan`, `LessThan`, `Equals`
+- **SemVer**: `SemVerGreaterThan`, `SemVerLessThan` (Perfect for rolling out features to specific mobile app versions)
+- **Lists**: `InList`, `NotInList`
+- **Segments**: `InSegment`, `NotInSegment`
+
+When evaluating a flag, the Engine processes the rules from top to bottom. The first rule that matches the user's Context is executed.
+
+{/* TODO: Image - Screenshot of the rule builder UI showing a SemVer rule targeting users with App Version >= 2.1.0 */}
+
+## Percentage Rollouts
+
+Sometimes you don't want to target specific users; you want to target a random subset of your user base (e.g., a 20% canary release). ToggleMesh handles this via **Rollouts**.
+
+ToggleMesh uses a deterministic hashing algorithm (`murmurhash3`) based on the user's `Identity` (e.g., User ID, Device ID) combined with the Flag Key. This guarantees that:
+1. A user in the 20% bucket will *always* stay in that bucket (no flickering).
+2. The buckets are evenly distributed.
+
+### Fallthrough Rollout
+
+If no Targeting Rules match a user, the Engine falls back to the **Fallthrough Rollout**. 
+You can set this to a simple 100% allocation to a specific variation, or split it (e.g., 50% Variation A, 50% Variation B).
+
+### Contextual Rollouts
+
+You can also use Percentage Rollouts *inside* a Targeting Rule! 
+For example, you could create a rule:
+- **IF** `Country` `Equals` `US`
+- **SERVE** 80% Variation A, 20% Variation B
+
+This allows you to run targeted A/B tests or canary rollouts on specific segments of your population.

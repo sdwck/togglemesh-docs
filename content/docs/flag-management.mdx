@@ -1,0 +1,47 @@
+---
+title: Flag Management
+description: Creating flags, multivariate variations, and setting up approvals.
+---
+
+# Flag Management
+
+ToggleMesh provides a rich UI for managing feature flags safely across multiple environments.
+
+## Multivariate Variations
+
+Most feature flag systems treat flags as a simple Boolean (`true` or `false`). ToggleMesh treats all flags as **Multivariate** by default.
+
+When you create a flag, you define its Type (Boolean, String, or JSON) and its Variations. For example, a String flag might have three Variations:
+- Variation A: `checkout_v1`
+- Variation B: `checkout_v2`
+- Variation C: `checkout_v3`
+
+You can then serve any of these variations based on Targeting Rules or Percentage Rollouts.
+
+{/* TODO: Image - Screenshot of the Admin UI showing a JSON multivariate flag with 3 different variations configured */}
+
+## Approvals & Governance
+
+In enterprise environments (like Production), you rarely want a single engineer to be able to change a flag state instantly without review. ToggleMesh provides a robust **Approval Workflow**.
+
+### Configuring Approvals
+You can configure Approvals at the Environment level:
+1. Navigate to your Project -> Environments -> Production.
+2. Enable **Require Approvals**.
+3. Set the **Required Approvals Count** (e.g., `2`).
+
+### Creating a Pending Change
+Once Approvals are enabled, any changes made to a flag in that Environment will NOT be applied immediately. Instead, they are queued as a **Pending Change** (`PendingReview` status).
+
+The change generates a JSON diff of the flag state. Other Admins in your workspace can review the diff, discuss it, and Approve it. Once the required number of approvals is met, the change is merged and broadcasted via SSE.
+
+{/* TODO: Image - Screenshot showing a Pending Change review screen with a side-by-side JSON diff of a flag modification */}
+
+## Scheduled Rollouts
+
+You don't have to wake up at 3:00 AM on a Sunday to turn on a Black Friday feature. 
+
+ToggleMesh supports **Scheduled Rollouts**. When saving a flag change, you can specify an `ExecuteAt` timestamp. The API will hold the change in a `Scheduled` state and automatically apply it at the exact second you requested.
+
+> [!TIP]
+> You can combine Approvals and Scheduled Rollouts! You can create a change, schedule it for Sunday, and have your manager approve it on Friday. It will wait in a `Scheduled` state until Sunday.

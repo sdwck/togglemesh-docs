@@ -1,0 +1,67 @@
+---
+title: Go SDK
+description: ToggleMesh Server SDK for Go applications.
+---
+
+# Go SDK
+
+The ToggleMesh Go SDK is designed for high-concurrency microservices. It evaluates flags entirely in memory, ensuring your API routes never block on network requests.
+
+## Installation
+
+```bash
+go get github.com/sdwck/ToggleMesh/sdks/go@latest
+```
+
+## Initialization
+
+Initialize the client with your Server Key.
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/sdwck/ToggleMesh/sdks/go/togglemesh"
+)
+
+func main() {
+	client, err := togglemesh.NewClient(
+		togglemesh.WithAPIKey("tm_server_..."),
+		togglemesh.WithBaseURL("http://localhost:5264"),
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer client.Close()
+}
+```
+
+## Evaluating Flags
+
+Evaluate flags in memory instantly using `IsEnabled`:
+
+```go
+// Simple evaluation
+isEnabled := client.IsEnabled("new-search-algo")
+
+// Evaluation with Identity and Context
+isEnabled = client.IsEnabled(
+    "beta-feature",
+    togglemesh.WithIdentity("user_123"),
+    togglemesh.WithContext(map[string]any{
+        "Country":  "US",
+        "PlanType": "Enterprise",
+    }),
+)
+```
+
+## Tracking Analytics
+
+```go
+client.Track(
+    "checkout_success",
+    togglemesh.WithIdentity("user_123"),
+    togglemesh.WithEventValue(99.50),
+)
+```

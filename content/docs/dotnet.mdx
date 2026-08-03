@@ -1,0 +1,77 @@
+---
+title: .NET / C# SDK
+description: ToggleMesh Server SDK for .NET 8+ applications.
+---
+
+# .NET / C# SDK
+
+The ToggleMesh .NET SDK is a highly optimized Server SDK. It maintains a persistent `<30ms` SSE connection to the Control Plane and performs zero-allocation evaluations directly in memory.
+
+## Installation
+
+```bash
+dotnet add package ToggleMesh.SDK
+```
+
+## Initialization
+
+Register the client in your `Program.cs` or `Startup.cs`:
+
+```csharp
+builder.Services.AddToggleMesh(options =>
+{
+    options.ServerKey = "tm_srv_...";
+    options.BaseUrl = "http://localhost:5264";
+});
+```
+
+## Evaluating Flags
+
+Inject `IToggleMeshClient` into your services or controllers.
+
+```csharp
+public class CheckoutService
+{
+    private readonly IToggleMeshClient _toggleMesh;
+
+    public CheckoutService(IToggleMeshClient toggleMesh)
+    {
+        _toggleMesh = toggleMesh;
+    }
+
+    public void ProcessCheckout(string userId)
+    {
+        bool isNewFlow = _toggleMesh.IsEnabled("new-checkout", identity: userId);
+
+        if (isNewFlow)
+        {
+            // Do new flow
+        }
+    }
+}
+```
+
+### Strongly-Typed Contexts (Source Generators)
+
+For maximum performance (zero-allocations), you can use the `[ToggleMeshContext]` attribute on a `struct`. The SDK will generate an `IContextAccessor` implementation at compile time.
+
+```csharp
+[ToggleMeshContext]
+public partial struct CheckoutContext
+{
+    public string Country { get; set; }
+    public int CartValue { get; set; }
+}
+
+// Evaluation with zero boxing
+var context = new CheckoutContext { Country = "US", CartValue = 100 };
+var checkoutVersion = _toggleMesh.GetStringVariation("checkout_type", identity: userId, context, "v1");
+```
+
+## Tracking Analytics
+
+To power Multi-Armed Bandit experiments, track conversion events:
+
+```csharp
+_toggleMesh.Track("checkout_success", identity: userId, value: 99.50);
+```

@@ -1,27 +1,41 @@
 ---
 title: Architecture
-description: Overview of ToggleMesh Control Plane, Data Plane, and Real-Time Push
+description: Understanding the ToggleMesh Control Plane and Data Plane
 ---
 
-# ToggleMesh Architecture
+# Architecture Overview
 
-ToggleMesh decouples state mutation from feature evaluation. Configurations are pushed to application servers over persistent **Server-Sent Events (SSE)** connections, allowing SDKs to evaluate rules locally in memory with zero network overhead.
+ToggleMesh is designed for extreme performance, massive scale, and strict data privacy. To achieve this, it strictly separates the **Control Plane** (where flags are managed) from the **Data Plane** (where flags are evaluated).
 
-## Architecture Diagram
+{/* TODO: Image - High-level architecture diagram showing Control Plane (API/PostgreSQL), Redis Pub/Sub, and Data Plane (SDKs/Clients) */}
 
-```mermaid
-flowchart TD
-    UI[React Admin UI] -- REST API --> API[ToggleMesh.API]
-    API -- Read/Write --> PG[(PostgreSQL)]
-    API -- Invalidate --> REDIS[(Redis Pub/Sub)]
-    REDIS -. Fan-out .-> API
-    API == SSE Push ==> SDK[Client & Server SDKs]
-    SDK -- Async Metrics --> INGEST[API Metrics Ingest]
-```
+## The Control Plane
 
-## Core Components
+The Control Plane consists of the ToggleMesh API and the Admin UI. It is responsible for:
+- Managing Projects, Environments, Flags, and Segments.
+- Exposing the REST and GraphQL APIs for the dashboard.
+- Storing the source of truth in PostgreSQL.
+- Pushing updates to the Data Plane via Redis Pub/Sub (`togglemesh-sse-updates`).
 
-- **Control Plane (`ToggleMesh.API`)**: FastEndpoints ASP.NET Core service managing projects, targeting rules, environments, and RBAC.
-- **Admin UI (`ToggleMesh.AdminUI`)**: Modern React application for feature flag management, experiments, and audit logging.
-- **Data Plane (SDKs)**: Local evaluation engine running in-process in your applications.
-- **Real-Time Streaming**: Redis Pub/Sub combined with HTTP SSE to fan-out flag state updates to all connected instances within milliseconds.
+Because the Control Plane is not involved in flag evaluation, it can go down completely without affecting your production applications.
+
+## The Data Plane
+
+The Data Plane consists of the ToggleMesh SDKs running inside your applications. 
+- SDKs download the ruleset (via a single HTTP call) upon initialization.
+- **Local Evaluation**: Every `IsEnabled()` check happens locally in the memory of your application. There are no network requests on the hot path.
+- **Zero-Allocation**: The .NET SDK evaluates rules using a stack-only `readonly ref struct EvaluationContext`, ensuring that millions of flag evaluations per second result in exactly 0 bytes of garbage collection pressure.
+
+## Real-Time Synchronization
+
+Instead of polling the Control Plane every 30 seconds (which scales poorly and introduces latency), ToggleMesh uses **Server-Sent Events (SSE)**.
+
+When you modify a flag in the Admin UI, the change is pushed to Redis, broadcasted to the API nodes, and pushed down the SSE pipes to all connected SDKs in under 50ms.
+
+[Read more about Real-Time Sync](/docs/realtime-sync)
+
+## Extensibility
+
+ToggleMesh's evaluation engine is built to be extended. You are not limited to the default operators (`Equals`, `InList`, `Regex`, etc.). You can inject your own proprietary business logic directly into the SDK's evaluation engine.
+
+[Read more about Custom Operators](/docs/custom-operators)

@@ -1,0 +1,27 @@
+# Claims: targeting.mdx
+
+- **[CLAIM-TAR-001]** ToggleMesh uses an internal component named `RuleEngine` to evaluate feature flags.
+- **[CLAIM-TAR-002]** A Targeting Rule consists of a Condition and a Result.
+- **[CLAIM-TAR-003]** If a rule condition is met, the user is served the rule's result.
+- **[CLAIM-TAR-004]** String Matching supports the `Equals` operator.
+- **[CLAIM-TAR-005]** String Matching supports the `StartsWith` operator.
+- **[CLAIM-TAR-006]** String Matching supports the `EndsWith` operator.
+- **[CLAIM-TAR-007]** String Matching supports the `Contains` operator.
+- **[CLAIM-TAR-008]** Regex matching supports the `MatchesRegex` operator.
+- **[CLAIM-TAR-009]** Numeric matching supports the `GreaterThan` operator.
+- **[CLAIM-TAR-010]** Numeric matching supports the `LessThan` operator.
+- **[CLAIM-TAR-011]** Numeric matching supports the `Equals` operator.
+- **[CLAIM-TAR-012]** SemVer matching supports the `SemVerGreaterThan` operator.
+- **[CLAIM-TAR-013]** SemVer matching supports the `SemVerLessThan` operator.
+- **[CLAIM-TAR-014]** List matching supports the `InList` operator.
+- **[CLAIM-TAR-015]** List matching supports the `NotInList` operator.
+- **[CLAIM-TAR-016]** Segment matching supports the `InSegment` operator.
+- **[CLAIM-TAR-017]** Segment matching supports the `NotInSegment` operator.
+- **[CLAIM-TAR-018]** The RuleEngine processes rules sequentially from top to bottom.
+- **[CLAIM-TAR-019]** The first matching rule for the given Context is executed.
+- **[CLAIM-TAR-020]** Rollouts use the `murmurhash3` deterministic hashing algorithm.
+- **[CLAIM-TAR-021]** Hash computation combines the user's `Identity` (e.g., User ID or Device ID) with the Flag Key.
+- **[CLAIM-TAR-022]** Deterministic hashing guarantees users remain in their assigned rollout bucket without flickering.
+- **[CLAIM-TAR-023]** If no targeting rules match, the evaluation falls back to `Fallthrough Rollout`.
+- **[CLAIM-TAR-024]** Fallthrough Rollout supports 100% single variation allocation or percentage splits.
+- **[CLAIM-TAR-025]** Percentage Rollouts can be nested inside a Targeting Rule (Contextual Rollouts).

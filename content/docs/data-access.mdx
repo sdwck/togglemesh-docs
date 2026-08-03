@@ -1,0 +1,82 @@
+---
+title: Direct Data Access
+description: Querying ClickHouse directly for custom analytics.
+---
+
+# Direct Data Access (ClickHouse)
+
+ToggleMesh provides a beautiful Admin UI for viewing experiment results, but large enterprise data teams often want to pull raw analytics data into their own BI tools (Tableau, Looker, Metabase) or run custom ad-hoc queries.
+
+Because the ToggleMesh Enterprise Stack writes raw telemetry directly to **ClickHouse**, you have full SQL access to the underlying data.
+
+## Table Schemas
+
+ToggleMesh stores telemetry in two main tables using the `MergeTree()` engine. Both tables are strictly partitioned by `Timestamp` and ordered by `EnvironmentId` to ensure massive queries scan as little data as possible.
+
+### 1. `AnalyticsExposures`
+
+This table records exactly when a user evaluated a specific feature flag and which variation they received.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `Id` | `UUID` | Unique identifier for the exposure event. |
+| `EnvironmentId` | `UUID` | The Environment where the flag was evaluated. |
+| `FlagKey` | `String` | The unique string key of the evaluated Feature Flag. |
+| `Identity` | `String` | The hashed or raw Identity of the user/device. |
+| `VariationId` | `Nullable(UUID)` | The ID of the Variation served (if applicable). |
+| `Properties` | `String` | JSON string of the Context/Attributes used during evaluation. |
+| `Timestamp` | `DateTime` | When the exposure occurred. |
+
+### 2. `AnalyticsTracks`
+
+This table records conversion events (e.g., clicks, purchases) triggered by the user via the SDK `track()` method.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `Id` | `UUID` | Unique identifier for the track event. |
+| `EnvironmentId` | `UUID` | The Environment where the event was tracked. |
+| `Identity` | `String` | The hashed or raw Identity of the user/device. |
+| `EventName` | `String` | The string identifier of the Metric (e.g., `checkout_success`). |
+| `Value` | `Nullable(Float64)` | The numeric value associated with the event (e.g., `99.50` for revenue). |
+| `Properties` | `String` | JSON string of custom metadata attached to the track event. |
+| `Timestamp` | `DateTime` | When the event occurred. |
+
+## Example Queries
+
+Because ToggleMesh uses standard ClickHouse tables, you can run powerful queries in milliseconds.
+
+### Daily Active Users (DAU) per Flag
+Count unique identities that evaluated the `new_checkout_flow` flag yesterday:
+
+```sql
+SELECT 
+    toDate(Timestamp) as Date, 
+    uniqExact(Identity) as UniqueUsers
+FROM AnalyticsExposures
+WHERE FlagKey = 'new_checkout_flow' 
+  AND Timestamp >= subtractDays(now(), 1)
+GROUP BY Date
+ORDER BY Date ASC;
+```
+
+### Conversion Funnel (Exposure to Track)
+Calculate what percentage of users who saw Variation A actually completed a purchase within 24 hours:
+
+```sql
+SELECT 
+    COUNT(DISTINCT e.Identity) as ExposedUsers,
+    COUNT(DISTINCT t.Identity) as ConvertedUsers,
+    (COUNT(DISTINCT t.Identity) / COUNT(DISTINCT e.Identity)) * 100 as ConversionRate
+FROM AnalyticsExposures e
+LEFT JOIN AnalyticsTracks t 
+  ON e.Identity = t.Identity 
+  AND e.EnvironmentId = t.EnvironmentId
+  AND t.EventName = 'checkout_success'
+  AND t.Timestamp > e.Timestamp
+  AND t.Timestamp <= e.Timestamp + INTERVAL 24 HOUR
+WHERE e.FlagKey = 'new_checkout_flow' 
+  AND e.VariationId = 'variation-a-uuid';
+```
+
+> [!TIP]
+> Do not run massive analytical queries against PostgreSQL if you are using the Core Stack in production. PostgreSQL is row-oriented and will struggle with millions of analytics rows. Always use the Enterprise Stack (ClickHouse) for direct data access.

@@ -1,0 +1,44 @@
+---
+title: Offline Resilience
+description: Ensuring your application boots instantly even if the Control Plane is unreachable.
+---
+
+# Offline Resilience
+
+A common concern when adopting a feature flag system is: *"What happens to my application if the ToggleMesh Control Plane goes down while my app is booting?"*
+
+ToggleMesh is designed with a strict **Data Plane resilience** philosophy. The SDKs are built to survive Control Plane outages gracefully.
+
+## Local JSON Fallbacks
+
+By default, the ToggleMesh Server SDKs (like the .NET SDK) maintain a local JSON fallback file on disk.
+
+When your application starts up and calls `builder.Services.AddToggleMeshClient()`, the SDK attempts to connect to the Control Plane to download the latest flag state. 
+
+If this connection times out or fails (e.g., due to a network partition or DNS failure), the SDK will automatically fallback to the local disk cache.
+
+```csharp
+// Program.cs
+builder.Services.AddToggleMeshClient(options => {
+    options.BaseUrl = "http://api.togglemesh.internal";
+    options.ApiKey = "tm_server_xxxxxxxx";
+    
+    // These are the defaults, shown here for clarity
+    options.UseFallbackFile = true; 
+    options.FallbackFilePath = "togglemesh-fallback.json"; 
+});
+```
+
+### How it works
+
+1. **Successful Sync**: Every time the SDK successfully syncs with the Control Plane (either on boot or via an SSE update), it asynchronously calls `SaveFallbackAsync()` to persist the latest valid state (flags and segments) to `togglemesh-fallback.json`.
+2. **Failed Boot**: If the SDK fails to reach the Control Plane on the next reboot, it calls `LoadFallbackAsync()`. It reads `togglemesh-fallback.json` and populates the in-memory evaluator with the last known good state.
+3. **Background Recovery**: The SDK will continue to attempt reconnections to the SSE stream in the background using exponential backoff.
+
+{/* TODO: Image - Flowchart showing the SDK boot sequence: HTTP Sync -> On Success (Save to disk) -> On Failure (Load from disk) */}
+
+## The "Zero-Network" Mode
+
+Because of the local JSON fallback mechanism, you can effectively run ToggleMesh in a completely air-gapped or "Zero-Network" mode during CI/CD pipelines or local development.
+
+You can manually commit a `togglemesh-fallback.json` file to your Git repository containing specific flag states for your tests. If you point the SDK to a non-existent BaseURL during testing, it will gracefully load the committed JSON file and evaluate your flags exactly as expected, with zero network overhead.
