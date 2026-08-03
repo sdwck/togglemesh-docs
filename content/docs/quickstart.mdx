@@ -1,0 +1,64 @@
+---
+title: Quickstart
+description: Get started with ToggleMesh in 5 minutes
+---
+
+# Quickstart Guide
+
+This guide will help you install the ToggleMesh SDK and evaluate your first feature flag in a C# / .NET application.
+
+## Prerequisites
+
+- A running ToggleMesh server (see [Self-Hosting Guide](/docs/self-hosting))
+- .NET 8, 9, or 10 SDK installed
+
+## Step 1: Install the SDK & CLI
+
+Install the official C# SDK and CLI tool:
+
+```bash
+dotnet add package ToggleMesh.SDK
+dotnet tool install --global ToggleMesh.CLI
+```
+
+## Step 2: Register the SDK in Program.cs
+
+Inject the ToggleMesh client into your Dependency Injection container:
+
+```csharp
+// Program.cs
+builder.Services.AddToggleMeshClient(options => 
+{
+    options.BaseUrl = "https://api.togglemesh.dev"; // Your self-hosted server
+    options.ApiKey = "tm_server_xxxxxxxx";
+}).AddToggleMeshHttpContext();
+```
+
+## Step 3: Evaluate Flags Locally
+
+Use `IToggleMeshClient` in your services:
+
+```csharp
+public class CheckoutService
+{
+    private readonly IToggleMeshClient _toggleMesh;
+
+    public CheckoutService(IToggleMeshClient toggleMesh)
+    {
+        _toggleMesh = toggleMesh;
+    }
+
+    public void ProcessOrder()
+    {
+        // Zero-allocation, local memory evaluation
+        if (_toggleMesh.IsEnabled("new-checkout-flow"))
+        {
+            ExecuteNewFlow();
+        }
+        else
+        {
+            ExecuteLegacyFlow();
+        }
+    }
+}
+```

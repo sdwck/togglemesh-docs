@@ -1,0 +1,27 @@
+---
+title: Architecture
+description: Overview of ToggleMesh Control Plane, Data Plane, and Real-Time Push
+---
+
+# ToggleMesh Architecture
+
+ToggleMesh decouples state mutation from feature evaluation. Configurations are pushed to application servers over persistent **Server-Sent Events (SSE)** connections, allowing SDKs to evaluate rules locally in memory with zero network overhead.
+
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+    UI[React Admin UI] -- REST API --> API[ToggleMesh.API]
+    API -- Read/Write --> PG[(PostgreSQL)]
+    API -- Invalidate --> REDIS[(Redis Pub/Sub)]
+    REDIS -. Fan-out .-> API
+    API == SSE Push ==> SDK[Client & Server SDKs]
+    SDK -- Async Metrics --> INGEST[API Metrics Ingest]
+```
+
+## Core Components
+
+- **Control Plane (`ToggleMesh.API`)**: FastEndpoints ASP.NET Core service managing projects, targeting rules, environments, and RBAC.
+- **Admin UI (`ToggleMesh.AdminUI`)**: Modern React application for feature flag management, experiments, and audit logging.
+- **Data Plane (SDKs)**: Local evaluation engine running in-process in your applications.
+- **Real-Time Streaming**: Redis Pub/Sub combined with HTTP SSE to fan-out flag state updates to all connected instances within milliseconds.
