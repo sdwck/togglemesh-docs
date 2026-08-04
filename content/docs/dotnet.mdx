@@ -1,33 +1,78 @@
 ---
 title: .NET / C# SDK
-description: ToggleMesh Server SDK for .NET 8+ applications.
+description: High-performance, zero-allocation Server SDK for .NET applications.
 ---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
 
 # .NET / C# SDK
 
-The ToggleMesh .NET SDK is a highly optimized Server SDK. It maintains a persistent `<30ms` SSE connection to the Control Plane and performs zero-allocation evaluations directly in memory.
+The **ToggleMesh .NET SDK** is a high-performance Server SDK for C#. It maintains a persistent SSE connection to the ToggleMesh API for real-time flag updates, while all flag evaluations are performed directly in-memory with zero latency.
 
-## Installation
+---
+
+## Installation & Setup
+
+<Steps>
+<Step>
+
+### Install the NuGet Package
 
 ```bash
 dotnet add package ToggleMesh.SDK
 ```
 
-## Initialization
+</Step>
+<Step>
 
-Register the client in your `Program.cs` or `Startup.cs`:
+### Register in Service Container
+
+Register the client in your .NET application using `AddToggleMeshClient`:
 
 ```csharp
-builder.Services.AddToggleMesh(options =>
+builder.Services.AddToggleMeshClient(options =>
 {
-    options.ServerKey = "tm_srv_...";
-    options.BaseUrl = "http://localhost:5264";
+    options.BaseUrl = "https://app.togglemesh.dev";
+    options.ApiKey = "tm_server_your_api_key_here";
+});
+
+// Automatic user context extraction from ASP.NET Core HttpContext
+builder.Services.AddToggleMeshHttpContext();
+```
+
+### Advanced Options
+
+```csharp
+builder.Services.AddToggleMeshClient(options =>
+{
+    // Required
+    options.BaseUrl = "https://app.togglemesh.dev";
+    options.ApiKey = "tm_server_your_api_key_here";
+
+    // Offline Resilience (Enabled by default)
+    options.UseFallbackFile = true;
+    options.FallbackFilePath = "./.togglemesh/fallback.json";
+
+    // Performance & Analytics
+    options.IsMetricsEnabled = true;
+    options.AnalyticsChannelCapacity = 10000;
+    options.MetricsBufferCapacity = 10000;
+    options.MaxBatchSize = 2000;
+
+    // Context Extraction Keys
+    options.IdentityKeys = new[] { "UserId", "sub", "SessionId", "DeviceId", "Id" };
 });
 ```
 
-## Evaluating Flags
+</Step>
+</Steps>
 
-Inject `IToggleMeshClient` into your services or controllers.
+---
+
+## Basic Usage
+
+When combined with `AddToggleMeshHttpContext()` in ASP.NET Core, the SDK automatically resolves the ambient user identity and context. This allows you to check flags instantly without passing boilerplate parameters:
 
 ```csharp
 public class CheckoutService
@@ -39,23 +84,106 @@ public class CheckoutService
         _toggleMesh = toggleMesh;
     }
 
-    public void ProcessCheckout(string userId)
+    public async Task ProcessCheckoutAsync(OrderDto order)
     {
-        bool isNewFlow = _toggleMesh.IsEnabled("new-checkout", identity: userId);
+        // Automatically picks up user identity & context from ambient HttpContext!
+        var isNewFlow = _toggleMesh.IsEnabled("new-checkout");
 
         if (isNewFlow)
         {
-            // Do new flow
+            await ProcessNewCheckoutPipelineAsync(order);
+            return;
         }
+
+        await ProcessLegacyPipelineAsync(order);
     }
 }
 ```
 
-### Strongly-Typed Contexts (Source Generators)
+<Callout type="info" title="Strongly-Typed Flags">
+Consider using the `togglemesh sync` CLI command to generate strongly-typed `Flags` constants (e.g. `Flags.NewCheckout`) instead of relying on magic strings like `"new-checkout"`. Check out the [CLI documentation](/docs/cli) for details.
+</Callout>
 
-For maximum performance (zero-allocations), you can use the `[ToggleMeshContext]` attribute on a `struct`. The SDK will generate an `IContextAccessor` implementation at compile time.
+---
+
+## Flag Variations
+
+The `IToggleMeshClient` interface provides zero-latency evaluation methods for all flag types. 
+
+### String Variations (`GetStringVariation`)
 
 ```csharp
+var theme = _toggleMesh.GetStringVariation("app-theme", defaultValue: "dark");
+```
+
+### Strongly-Typed JSON Payloads (`GetJsonVariation<T>`)
+
+Deserializes complex JSON flag configurations directly into typed C# objects:
+
+```csharp
+public record PricingConfig(decimal DiscountPercentage, bool EnablePromoCode);
+
+var config = _toggleMesh.GetJsonVariation<PricingConfig>(
+    "pricing-rules",
+    defaultValue: new PricingConfig(0, false)
+);
+```
+
+### Raw Evaluation Details (`Evaluate`)
+
+Returns the exact variation ID or rule evaluation ID (`Guid?`). This is highly useful for building custom analytics pipelines or debugging exactly *which* specific targeting rule matched for a user in admin panels:
+
+```csharp
+var variationId = _toggleMesh.Evaluate("new-checkout");
+```
+
+---
+
+## Explicit Context Evaluation
+
+If you are running in a background worker (or not using `AddToggleMeshHttpContext`), you can explicitly pass the `identity` and `context` properties to any evaluation method:
+
+```csharp
+var isEnabled = _toggleMesh.IsEnabled(
+    "feature-header", 
+    identity: "user_123", 
+    contextAttributes: new { Subscription = "Pro", Device = "Mobile" }
+);
+```
+
+---
+
+## Event Tracking & Analytics (`Track`)
+
+Use the `Track` method to send custom events to the ToggleMesh API. This data powers your A/B Tests and Multi-Armed Bandit (MAB) experiments. 
+
+Like flag evaluations, `Track` automatically extracts `identity` and `context` from the ambient context (e.g. `HttpContext`). You only need to pass the event name and an optional value.
+
+When setting up experiments in the dashboard, you can choose between two primary goal metrics:
+- **Conversion Goals**: Track simple outcomes (e.g. "Did the user click sign up?"). Omit the `value` parameter.
+- **Revenue Goals**: Track financial or quantitative outcomes (e.g. "How much did the user spend?"). Pass a numeric `value`.
+
+```csharp
+// Conversion Goal (No value)
+_toggleMesh.Track("signup_completed");
+
+// Revenue Goal (With numeric value)
+_toggleMesh.Track("checkout_completed", value: 99.99);
+
+// Revenue Goal with custom properties
+_toggleMesh.Track("checkout_completed", new { PaymentMethod = "Card", Tier = "Pro" }, value: 99.99);
+```
+
+---
+
+## High-Performance Engine (`[ToggleMeshContext]`)
+
+The SDK uses C# Source Generators to parse contexts at compile-time. While you can apply `[ToggleMeshContext]` to any `class` or `record`, using it on a `struct` allows you to pass it by reference (`ref`), completely eliminating heap allocations and garbage collection on the hot path:
+
+### Zero-Allocation Evaluation
+
+```csharp
+// 1. Define your User Context attributes
 [ToggleMeshContext]
 public partial struct CheckoutContext
 {
@@ -63,15 +191,106 @@ public partial struct CheckoutContext
     public int CartValue { get; set; }
 }
 
-// Evaluation with zero boxing
-var context = new CheckoutContext { Country = "US", CartValue = 100 };
-var checkoutVersion = _toggleMesh.GetStringVariation("checkout_type", identity: userId, context, "v1");
+// 2. Instantiate the struct
+var context = new CheckoutContext { Country = "US", CartValue = 150 };
+var user = new ToggleMeshUser<CheckoutContext>(identity: "user_123", contextAttributes: context);
+
+// 3. Zero-Allocation Evaluation (pass user by ref)
+var isEligible = _toggleMesh.IsEnabled("discount-promo", ref user);
 ```
 
-## Tracking Analytics
+### Zero-Allocation Tracking
 
-To power Multi-Armed Bandit experiments, track conversion events:
+You can apply the exact same pattern to custom event properties for analytics tracking:
 
 ```csharp
-_toggleMesh.Track("checkout_success", identity: userId, value: 99.50);
+// 1. Define your Event Properties for analytics
+[ToggleMeshContext]
+public partial struct OrderProperties
+{
+    public string PaymentMethod { get; set; }
+}
+
+// 2. Instantiate User Context and Properties
+var context = new CheckoutContext { Country = "US", CartValue = 150 };
+var user = new ToggleMeshUser<CheckoutContext>(identity: "user_123", contextAttributes: context);
+
+var props = new OrderProperties { PaymentMethod = "CreditCard" };
+
+// 3. Zero-Allocation Tracking
+_toggleMesh.Track("checkout_completed", ref user, ref props, value: 150.0);
+```
+
+---
+
+## Ambient Context & Custom Context Providers
+
+With `AddToggleMeshHttpContext()`, the SDK automatically extracts the `UserId` claim to use as the primary user Identity for rollouts, as well as `Email` and `Roles` to use as context attributes for targeting rules.
+
+If you store ambient state in custom scopes (e.g. `AsyncLocal` or gRPC Metadata), you can implement `IToggleMeshContextProvider` and register it in DI. ToggleMesh will automatically include its values in every flag check.
+
+```csharp
+using Microsoft.AspNetCore.Http;
+
+public class CloudflareCountryContextProvider : IToggleMeshContextProvider
+{
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public CloudflareCountryContextProvider(IHttpContextAccessor httpContextAccessor)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    public bool TryGetValue(string key, out string? value)
+    {
+        // Extract the user's country from Cloudflare headers for Geo-targeting
+        if (key.Equals("Country", StringComparison.OrdinalIgnoreCase))
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            value = request?.Headers["CF-IPCountry"].FirstOrDefault();
+            
+            return value != null;
+        }
+
+        value = null;
+        return false;
+    }
+}
+
+// Register in DI — ToggleMesh automatically uses it!
+builder.Services.AddSingleton<IToggleMeshContextProvider, CloudflareCountryContextProvider>();
+```
+
+---
+
+## Custom Rule Operators (`IRuleOperator`)
+
+The .NET SDK allows extending the rule evaluation engine with custom operators. The `Name` property must match the exact operator key defined in the ToggleMesh Control Plane.
+
+Here is an example of a zero-allocation `DomainMatch` operator:
+
+```csharp
+public class DomainMatchOperator : IRuleOperator
+{
+    // MUST match the operator key used in the Control Plane
+    public string Name => "DomainMatch"; 
+
+    // Pre-compiles the string value during flag sync (Cold Path)
+    public object? Compile(string ruleValue)
+    {
+        return ruleValue.Trim().ToLowerInvariant();
+    }
+
+    // Evaluated per flag check (Hot Path) - Zero heap allocations!
+    public bool Evaluate(string userValue, object? compiledRuleValue)
+    {
+        var targetDomain = (string)compiledRuleValue!;
+        
+        // AsSpan() prevents string allocation overhead
+        return userValue.AsSpan().EndsWith(targetDomain, StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+// Register in DI
+builder.Services.AddSingleton<IRuleOperator, DomainMatchOperator>();
 ```

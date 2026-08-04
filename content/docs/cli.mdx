@@ -11,7 +11,7 @@ import Image from 'next/image';
 
 The **ToggleMesh Universal CLI** is a powerful tool to synchronize feature flags directly from your Control Plane into your codebase. It can generate strongly-typed constants for **any supported language** (including C#, TypeScript, Python, and Go).
 
-It does not matter which package manager you use to install the CLI (NPM, Pip, or .NET) — under the hood, they all run the exact same core engine. A Python developer can use `npm install -g togglemesh` or a Node developer can use `dotnet tool install`, and the behavior, features, and output will be **100% identical**.
+It does not matter which package manager you use to install the CLI (NPM, Pip, or .NET) — under the hood, they all run the exact same core engine. A Python developer can use `npm install -g togglemesh` or a Node developer can use `dotnet tool install`, and the behavior, features, and output will be **identical**.
 
 <Image src="/togglemesh-cli.gif" alt="ToggleMesh CLI Interactive Demo" width={1280} height={720} unoptimized className="rounded-xl border border-white/10 my-8 shadow-2xl" />
 
@@ -158,6 +158,10 @@ The `sync` command accepts several flags to override your configuration file or 
 | `-o` | `--out` | Output file path (e.g., `./src/flags.ts`). Auto-detected if omitted. |
 | `-p` | `--project-id` | Project ID UUID (required when authenticating with a PAT). |
 | `-y` | `--yes` | Non-interactive mode (automatically confirms prompts). |
+
+<Callout type="warning" title="API Keys vs PATs">
+**Environment Keys** (`tm_server_...`) are environment-scoped. If using a broader **Personal Access Token** (`tmp_...`) in CI/CD, you **must** pass the `--project-id` flag so the CLI knows which project to sync.
+</Callout>
 
 <Callout type="info" title="Tip">
 Running `togglemesh sync` without arguments automatically discovers your project language and writes to the default output path!
