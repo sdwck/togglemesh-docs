@@ -3,38 +3,152 @@ title: Command Line Interface (CLI)
 description: Complete CLI reference, parameters, and flags for ToggleMesh code generation.
 ---
 
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+import Image from 'next/image';
+
 # Command Line Interface (CLI) Reference
 
-ToggleMesh provides native CLI tools to synchronize feature flags directly from your Control Plane into your codebase, generating strongly-typed constants.
+The **ToggleMesh Universal CLI** is a powerful tool to synchronize feature flags directly from your Control Plane into your codebase. It can generate strongly-typed constants for **any supported language** (including C#, TypeScript, Python, and Go).
+
+It does not matter which package manager you use to install the CLI (NPM, Pip, or .NET) — under the hood, they all run the exact same core engine. A Python developer can use `npm install -g togglemesh` or a Node developer can use `dotnet tool install`, and the behavior, features, and output will be **100% identical**.
+
+<Image src="/togglemesh-cli.gif" alt="ToggleMesh CLI Interactive Demo" width={1280} height={720} unoptimized className="rounded-xl border border-white/10 my-8 shadow-2xl" />
+
+Choose your preferred ecosystem to see installation and usage instructions:
+
+<Tabs items={['C# (.NET)', 'Node.js', 'Python', 'Go', 'React (Client)']} groupId="sdk">
+<Tab value="C# (.NET)">
+The core high-performance CLI is also distributed as a native .NET Global Tool.
+
+### Installation
+
+```bash
+dotnet tool install --global ToggleMesh.CLI
+```
+
+### Usage
+
+```bash
+# Launch the interactive configuration wizard
+togglemesh config
+
+# Synchronize feature flags and generate C# constants
+togglemesh sync
+```
+</Tab>
+
+<Tab value="Node.js">
+The primary CLI engine is available as an NPM package for Node.js environments.
+
+### Installation
+
+```bash
+npm install -g togglemesh
+```
+
+*(Alternatively, use `npx togglemesh` to execute on-the-fly without global installation).*
+
+### Usage
+
+```bash
+# Launch the interactive configuration wizard
+togglemesh config
+
+# Synchronize feature flags and generate type-safe constants
+togglemesh sync
+```
+</Tab>
+
+<Tab value="Python">
+The Python SDK (`togglemesh`) includes an embedded CLI wrapper.
+
+### Installation
+
+```bash
+pip install togglemesh
+```
+
+### Usage
+
+```bash
+# Launch the interactive configuration wizard
+togglemesh config
+
+# Synchronize feature flags and generate Python constants
+togglemesh sync
+```
+</Tab>
+
+<Tab value="Go">
+<Callout type="info" title="Using the Native Go CLI">
+You can absolutely use our primary, lightning-fast **Universal CLI** to generate Go code. However, for those who prefer strict ecosystem purity, we also maintain a standalone Go-native CLI tailored specifically for `go generate` workflows, allowing you to sync flags without installing Node.js, Python, or .NET.
+</Callout>
+
+The Go SDK includes a standalone Go CLI tailored specifically for `go generate` workflows.
+
+### Installation
+
+```bash
+go install github.com/sdwck/ToggleMesh/sdks/go/cmd/togglemesh@latest
+```
+
+### Usage
+
+The Go CLI is typically used via `go generate` directives, but can also be invoked manually.
+
+```bash
+# Launch the interactive configuration wizard
+togglemesh config
+
+# Synchronize feature flags manually
+togglemesh sync -out flags.go -pkg main
+```
+
+**Go Directive Integration:**
+```go
+//go:generate togglemesh sync -out flags.go -pkg main
+package main
+```
+
+**Go Specific Flags (`sync` and `config`)**:
+| Flag | Type | Description |
+| :--- | :--- | :--- |
+| `-key` | `string` | API Key or PAT (saved globally in `~/.togglemesh`). |
+| `-address` | `string` | Control Plane base URL (saved globally in `~/.togglemesh`). |
+| `-project` | `string` | Project ID (saved locally in `.togglemesh/config.json`). |
+| `-out` | `string` | Generated file path (default: `flags.go`). |
+| `-pkg` | `string` | Package name for generated Go file (default: `main`). |
+</Tab>
+
+<Tab value="React (Client)">
+For frontend environments like React, you use the same NPM CLI package as Node.js to generate your typed hooks and constants.
+
+### Installation
+
+```bash
+npm install -g togglemesh
+```
+
+*(Alternatively, use `npx togglemesh` to execute on-the-fly without global installation).*
+
+### Usage
+
+```bash
+# Launch the interactive configuration wizard
+togglemesh config
+
+# Synchronize feature flags and generate type-safe constants
+togglemesh sync
+```
+</Tab>
+</Tabs>
 
 ---
 
-## 1. Core CLI (`togglemesh`)
+## Global CLI Flags (`sync`)
 
-The primary CLI engine is a high-performance native application. You can install and run it globally via your choice of package manager:
-
-### Installation Options
-
-- **via NPM / NPX**:
-  ```bash
-  npm install -g togglemesh
-  # or execute on-the-fly
-  npx togglemesh sync
-  ```
-
-- **via .NET Global Tool**:
-  ```bash
-  dotnet tool install --global ToggleMesh.CLI
-  ```
-
----
-
-### Commands
-
-- `togglemesh config`: Launches the interactive configuration wizard or sets saved credentials.
-- `togglemesh sync`: Synchronizes feature flags and generates type-safe code constants.
-
-### Available Flags & Parameters
+The `sync` command accepts several flags to override your configuration file or run in CI/CD environments. *(Note: Go CLI uses different flag names, see Go tab)*.
 
 | Short | Long | Description |
 | :--- | :--- | :--- |
@@ -45,50 +159,6 @@ The primary CLI engine is a high-performance native application. You can install
 | `-p` | `--project-id` | Project ID UUID (required when authenticating with a PAT). |
 | `-y` | `--yes` | Non-interactive mode (automatically confirms prompts). |
 
-> [!TIP]
-> Running `togglemesh sync` without arguments automatically discovers your project language (C#, TypeScript, Go, or Python) and writes to the default output path!
-
----
-
-## 2. Python Package Integration
-
-The Python SDK (`togglemesh`) includes an embedded CLI wrapper.
-
-```bash
-pip install togglemesh
-
-# Interactive config
-togglemesh config
-
-# Sync flags
-togglemesh sync
-```
-
----
-
-## 3. Native Go CLI
-
-The Go SDK includes a standalone Go CLI tailored specifically for `go generate` workflows.
-
-### Installation
-
-```bash
-go install github.com/sdwck/ToggleMesh/sdks/go/cmd/togglemesh@latest
-```
-
-### Available Flags (`config` and `sync`)
-
-| Flag | Type | Description |
-| :--- | :--- | :--- |
-| `-key` | `string` | API Key or PAT (saved globally in `~/.togglemesh`). |
-| `-address` | `string` | Control Plane base URL (saved globally in `~/.togglemesh`). |
-| `-project` | `string` | Project ID (saved locally in `.togglemesh/config.json`). |
-| `-out` | `string` | Generated file path (default: `flags.go`). |
-| `-pkg` | `string` | Package name for generated Go file (default: `main`). |
-
-### Go Directive Integration
-
-```go
-//go:generate togglemesh sync -out flags.go -pkg main
-package main
-```
+<Callout type="info" title="Tip">
+Running `togglemesh sync` without arguments automatically discovers your project language and writes to the default output path!
+</Callout>
