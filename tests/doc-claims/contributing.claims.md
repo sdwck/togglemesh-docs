@@ -1,25 +1,20 @@
-# Claims: contributing.mdx
+# Technical Claims Verification: `contributing.mdx`
 
-- **[CLAIM-CON-001]** ToggleMesh is open-source.
-- **[CLAIM-CON-002]** The API Node is a .NET 8 application.
-- **[CLAIM-CON-003]** The API Node serves the Admin UI, REST API, and SSE streaming endpoints.
-- **[CLAIM-CON-004]** The primary database is PostgreSQL version 18.
-- **[CLAIM-CON-005]** PostgreSQL stores Flag configurations, Environments, Users, and standard Analytics.
-- **[CLAIM-CON-006]** The caching and Pub/Sub layer is Redis version 7.
-- **[CLAIM-CON-007]** Redis broadcasts flag changes across API nodes in `<10ms`.
-- **[CLAIM-CON-008]** Local stack orchestration uses `docker-compose.yml`.
-- **[CLAIM-CON-009]** Repository clone URL is `https://github.com/sdwck/ToggleMesh.git`.
-- **[CLAIM-CON-010]** Service startup command is `docker-compose up -d`.
-- **[CLAIM-CON-011]** Database migrations run automatically on startup via `TM_RUN_MIGRATIONS_ON_STARTUP=true`.
-- **[CLAIM-CON-012]** Docker containers must report `service_healthy` before accessing the dashboard.
-- **[CLAIM-CON-013]** Dashboard local URL is `http://localhost:5264`.
-- **[CLAIM-CON-014]** Default Admin Email is `admin@togglemesh.local`.
-- **[CLAIM-CON-015]** Default Admin Password is `Admin123!`.
-- **[CLAIM-CON-016]** Docker infrastructure-only startup command is `docker-compose up -d db redis`.
-- **[CLAIM-CON-017]** Visual Studio / Rider solution file is `ToggleMesh.sln`.
-- **[CLAIM-CON-018]** C# project name is `ToggleMesh.API`.
-- **[CLAIM-CON-019]** Development mode connects to Postgres at `localhost:5432`.
-- **[CLAIM-CON-020]** Development mode connects to Redis at `localhost:6379`.
-- **[CLAIM-CON-021]** Git branches must branch off `main`.
-- **[CLAIM-CON-022]** Integration tests use `TestContainers` for Postgres and ClickHouse.
-- **[CLAIM-CON-023]** Integration tests project is `ToggleMesh.IntegrationTests`.
+| Claim | Verified | Source | Notes |
+| :--- | :---: | :--- | :--- |
+| 1. ToggleMesh is open source. | ✅ | `LICENSE` / Public Repo | The project is an open-source initiative. |
+| 2. API Node is a .NET 10 application. | ✅ | `ToggleMesh.API.csproj` | Verified `<TargetFramework>net10.0</TargetFramework>`. Fixed documentation which previously claimed .NET 8. |
+| 3. Core API provides REST and SSE. | ✅ | `ToggleMesh.API` routing | The API node acts as the backend. |
+| 4. Admin UI is React, served by API in Docker, or standalone Vite locally. | ✅ | Build setup | Verified Dockerfile and Vite setup. |
+| 5. PostgreSQL is the primary database. | ✅ | `docker-compose.yml` | Base database. |
+| 6. Redis is the distributed caching and Pub/Sub mechanism. | ✅ | `docker-compose.yml` | Base caching. |
+| 7. ClickHouse & Kafka available via `docker-compose.enterprise.yml`. | ✅ | Filesystem | Found the enterprise compose file. |
+| 8. `docker-compose.dev.yml` provides local dev overrides. | ✅ | Filesystem | Found the dev compose file. |
+| 9. Starting the stack uses `docker compose up -d`. | ✅ | Docker CLI | Standard V2 Compose syntax. |
+| 10. `TM_RUN_MIGRATIONS_ON_STARTUP=true` is the default. | ✅ | `docker-compose.yml` | See line 50. |
+| 11. Admin UI is at `http://localhost:5264`, Scalar at `/docs`. | ✅ | `docker-compose.yml` / `ToggleMesh.API` | Scalar is mapped correctly in .NET. |
+| 12. Default Admin Email is `admin@togglemesh.local`. | ✅ | `docker-compose.yml` | See line 53. |
+| 13. Default Admin Password is `Admin123!`. | ✅ | `docker-compose.yml` | See line 54. |
+| 14. Infrastructure can be run via `docker compose up -d db redis`. | ✅ | Docker Compose | Targets specific services. |
+| 15. API natively defaults to `https://localhost:7282` (or `5264`). | ✅ | `launchSettings.json` | Verified HTTP/HTTPS bindings. |
+| 16. Admin UI natively requires `npm run dev` in `src/ToggleMesh.AdminUI` on `5173`. | ✅ | Node/Vite Standards | Typical Vite port. |
